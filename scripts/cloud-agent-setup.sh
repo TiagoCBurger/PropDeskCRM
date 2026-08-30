@@ -2,9 +2,11 @@
 # =============================================================================
 # Bootstrap idempotente do ambiente de DESENVOLVIMENTO (Cloud Agent / dev local).
 #
-# Gera um `.env.local` MÍNIMO só se ele ainda não existir, com placeholders
-# válidos e segredos LOCAIS descartáveis, para que `pnpm dev`/`pnpm build`
-# subam sem erro fatal. NÃO substitui um `.env.local` já preenchido.
+#  1. Gera um `.env.local` MÍNIMO só se ele ainda não existir, com placeholders
+#     válidos e segredos LOCAIS descartáveis, para que `pnpm dev`/`pnpm build`
+#     subam sem erro fatal. NÃO substitui um `.env.local` já preenchido.
+#  2. Instala o Claude Code CLI (`claude`) se ainda não estiver no PATH —
+#     best-effort, nunca derruba o setup do projeto.
 #
 # Isto NÃO configura Supabase/WAHA/IA de verdade — para auth + banco reais,
 # preencha as chaves conforme `docs/SETUP.md`. É apenas o piso para o app
@@ -14,17 +16,16 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# --- 1. .env.local mínimo (idempotente) --------------------------------------
 if [[ -f .env.local ]]; then
   echo "[cloud-agent-setup] .env.local já existe — preservando."
-  exit 0
-fi
+else
+  echo "[cloud-agent-setup] criando .env.local mínimo para dev…"
 
-echo "[cloud-agent-setup] criando .env.local mínimo para dev…"
+  gen_hex() { openssl rand -hex "${1:-32}"; }
+  gen_b64() { openssl rand -base64 "${1:-32}"; }
 
-gen_hex() { openssl rand -hex "${1:-32}"; }
-gen_b64() { openssl rand -base64 "${1:-32}"; }
-
-cat > .env.local <<EOF
+  cat > .env.local <<EOF
 # =============================================================================
 # .env.local — ambiente de DESENVOLVIMENTO (gerado por scripts/cloud-agent-setup.sh)
 # NÃO commitar (está no .gitignore). Segredos abaixo são locais/descartáveis.
@@ -63,4 +64,30 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
 EOF
 
-echo "[cloud-agent-setup] .env.local criado."
+  echo "[cloud-agent-setup] .env.local criado."
+fi
+
+# --- 2. Claude Code CLI (opcional, best-effort, idempotente) ------------------
+# Login NÃO é feito aqui. A forma que NÃO pede /login a cada boot é setar
+# ANTHROPIC_API_KEY no painel de Secrets do Cloud Agent (injetado como env var).
+if command -v claude >/dev/null 2>&1; then
+  echo "[cloud-agent-setup] claude já disponível ($(command -v claude))."
+else
+  echo "[cloud-agent-setup] instalando Claude Code CLI…"
+  # Prefixo cujo bin já está no PATH: o do node do nvm (NVM_BIN); com fallback.
+  claude_prefix="${NVM_BIN:+$(dirname "$NVM_BIN")}"
+  [[ -z "$claude_prefix" ]] && claude_prefix="$HOME/.npm-global"
+  if npm install -g @anthropic-ai/claude-code --prefix "$claude_prefix" >/dev/null 2>&1; then
+    echo "[cloud-agent-setup] Claude Code instalado em $claude_prefix/bin."
+    # Garante o bin no PATH de shells futuros quando não for o prefixo do nvm.
+    case ":$PATH:" in
+      *":$claude_prefix/bin:"*) : ;;
+      *)
+        linha="export PATH=\"$claude_prefix/bin:\$PATH\""
+        grep -qxF "$linha" "$HOME/.bashrc" 2>/dev/null || echo "$linha" >> "$HOME/.bashrc"
+        ;;
+    esac
+  else
+    echo "[cloud-agent-setup] aviso: falha ao instalar Claude Code (segue sem)."
+  fi
+fi
