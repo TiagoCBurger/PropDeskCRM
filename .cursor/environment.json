@@ -1,0 +1,10 @@
+{
+  "name": "DeskcommCRM",
+  "install": "bash scripts/cloud-agent-setup.sh && pnpm install --frozen-lockfile",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "pnpm dev"
+    }
+  ]
+}
