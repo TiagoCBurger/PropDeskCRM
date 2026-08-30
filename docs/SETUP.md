@@ -524,4 +524,4 @@ Bem-vindo ao DeskcommCRM. 🛠️
 
 ---
 
-> **Achou um erro neste guia?** Abra uma [issue](https://github.com/melgarafael/DeskcommCRM/issues) ou mande um PR — esse doc vive da contribuição da comunidade.
+> **Achou um erro neste guia?** Abra uma [issue](https://github.com/TiagoCBurger/PropDeskCRM/issues) ou mande um PR — esse doc vive da contribuição da comunidade.

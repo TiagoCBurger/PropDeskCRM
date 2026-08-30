@@ -15,7 +15,7 @@ Em uma única sessão autônoma de ~3 horas, partindo de PRD + Regras de Negóci
 - ✅ **Scaffolding completo** Next.js 15 + TypeScript + Tailwind + shadcn/ui (38 arquivos)
 - ✅ **Schema deployado em produção** no Supabase sa-east-1: **31 tabelas com RLS, 7 migrations, 100+ indexes**
 - ✅ **TypeScript types gerados** do banco (2184 linhas em `lib/database.types.ts`)
-- ✅ **Repositório no GitHub**: https://github.com/melgarafael/DeskcommCRM
+- ✅ **Repositório no GitHub**: https://github.com/TiagoCBurger/PropDeskCRM
 - ✅ **Security advisors** rodados, hardening aplicado (search_path, RLS coverage, anon revoke)
 
 ---
@@ -53,7 +53,7 @@ Em uma única sessão autônoma de ~3 horas, partindo de PRD + Regras de Negóci
 | **Supabase project** | `rrydmwnporysaiysiztn` em `sa-east-1` (São Paulo), Postgres 17 |
 | **URL** | `https://rrydmwnporysaiysiztn.supabase.co` |
 | **Anon key** (publishable) | `sb_publishable_71qDjdwBUo-a8qihNdFj2Q_wew0WUAi` |
-| **GitHub repo** | https://github.com/melgarafael/DeskcommCRM (private) |
+| **GitHub repo** | https://github.com/TiagoCBurger/PropDeskCRM (private) |
 
 ---
 
@@ -190,7 +190,7 @@ Tudo decidido durante a sessão autônoma está documentado em:
   ```bash
   npx @marp-team/marp-cli docs/presentation/pitch-deck.md -o pitch.pdf
   ```
-- GitHub repo: https://github.com/melgarafael/DeskcommCRM (mostre as docs)
+- GitHub repo: https://github.com/TiagoCBurger/PropDeskCRM (mostre as docs)
 - Supabase Studio: dashboard.supabase.com → projeto DeskcommCRM → Database → Tables (31 tabelas com RLS verde)
 
 ---

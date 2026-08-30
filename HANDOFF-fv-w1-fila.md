@@ -111,7 +111,7 @@ pediu.
 Medido no `CLAUDE.md` do meu HEAD, que traz a saída do `gh api` colada:
 
 ```console
-$ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+$ gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 verify, build-and-size, invariants, e2e
 ```
 

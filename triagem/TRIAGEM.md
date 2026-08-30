@@ -101,7 +101,7 @@ Gates da `main`: `typecheck`, `lint`, `lint:channels`, `test:unit`, `test:shell`
 Obrigatórios no merge — **cinco**, e não confie nesta lista: meça.
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection \
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection \
   --jq '.required_status_checks.contexts|join(", ")'
 # em 2026-08-14: verify, build-and-size, invariants, e2e, imagens-ok
 ```

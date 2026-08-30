@@ -15,7 +15,7 @@
 
 name: DeskcommCRM
 website_url: https://deskcomm.com.br
-source_code_url: https://github.com/melgarafael/DeskcommCRM
+source_code_url: https://github.com/TiagoCBurger/PropDeskCRM
 description: Sales CRM with built-in AI agents that answer, qualify and advance deals over WhatsApp. Multi-tenant with row-level isolation, a per-tenant RAG knowledge base, and an audit log of every action the AI takes.
 licenses:
   - MIT

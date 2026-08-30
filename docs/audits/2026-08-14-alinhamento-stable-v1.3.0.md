@@ -50,7 +50,7 @@ escreveu — uma escrita que só se confirma pela própria sessão que a fez nã
 for p in deskcommcrm deskcomm-worker deskcomm-scheduler; do
   for t in 1.3.0 1.3 stable; do
     echo -n "$p:$t "
-    docker buildx imagetools inspect ghcr.io/melgarafael/$p:$t | awk '/^Digest:/{print $2}'
+    docker buildx imagetools inspect ghcr.io/tiagocburger/$p:$t | awk '/^Digest:/{print $2}'
   done; done
 ```
 

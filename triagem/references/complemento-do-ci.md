@@ -184,7 +184,7 @@ Quem conferisse pelo nome literal `build-and-push` na branch protection não o a
 concluiria que a pendência continua — a afirmação sobre o NOME segue verdadeira e a afirmação
 sobre a CONSEQUÊNCIA ("informa mas não barra") ficou falsa. É a consequência que decide se um
 triador deixa passar um PR que quebra a imagem. Meça a consequência, não o nome:
-`gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts'`.
+`gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts'`.
 
 ---
 

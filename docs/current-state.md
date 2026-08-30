@@ -28,7 +28,7 @@ audited_against: origin/main @ 789dfa6 (v1.0.0, 2026-07-29)
 > Precisa do estado de agora? Meça na fonte. Para o que este documento mais cita:
 >
 > ```bash
-> gh api repos/melgarafael/DeskcommCRM/branches/main/protection \
+> gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection \
 >   --jq '.required_status_checks.contexts'      # os checks obrigatórios
 > pnpm typecheck && pnpm lint && pnpm lint:channels && pnpm test:unit && pnpm test:shell
 > ```

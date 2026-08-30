@@ -1162,7 +1162,7 @@ teste com esse nome, para que a próxima pessoa que "simplificar" o gate veja ve
 
 - `build-and-size` (`pnpm build`), `e2e` (45 das 46 specs), `imagens-ok`.
 - ⚠️ Reconferir a lista de checks obrigatórios na fonte antes de citar qualquer número —
-  `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'`.
+  `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'`.
   Essa lista já apodreceu três vezes no `CLAUDE.md`.
 
 **LACUNA DE VERIFICAÇÃO DECLARADA, não resolvida:** o Docker desta máquina não sobe, então

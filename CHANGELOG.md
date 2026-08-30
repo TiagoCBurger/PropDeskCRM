@@ -8,6 +8,16 @@ Se você roda o DeskcommCRM numa VPS, **leia a seção da versão para a qual es
 
 ## [Não lançado]
 
+### PropDeskCRM — fork independente
+
+- Repositório canônico passa a ser [`TiagoCBurger/PropDeskCRM`](https://github.com/TiagoCBurger/PropDeskCRM) (desvinculado da rede de forks do upstream).
+- Namespace de imagens Docker publicadas: `ghcr.io/tiagocburger/*` (app, worker, scheduler).
+- Documentação atualizada para apontar para o novo repositório e registry.
+
+### Roadmap
+
+- **Migração de storage para Cloudflare R2** — intenção declarada e plano em [`docs/roadmap/migracao-storage-r2.md`](docs/roadmap/migracao-storage-r2.md). Runtime continua em Supabase Storage até as fases de implementação.
+
 ## [1.10.1] — 2026-08-28
 
 ### Corrigido
@@ -1254,7 +1264,7 @@ servidor continuaria onde está. A segunda execução fixa tudo na mesma versão
 Para saber em que pé você está, sem mexer em nada:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/melgarafael/DeskcommCRM/main/hostgator-setup-kit/diagnostico.sh | bash
+curl -fsSL https://raw.githubusercontent.com/TiagoCBurger/PropDeskCRM/main/hostgator-setup-kit/diagnostico.sh | bash
 ```
 
 Ele só lê e explica — não escreve, não reinicia, não atualiza. Se disser que está afetada,
@@ -1528,7 +1538,7 @@ Primeira versão marcada do DeskcommCRM. O projeto vinha sendo desenvolvido publ
 - `hostgator-setup-kit`: instalação completa (app + WAHA + banco) com um comando.
 - `baseline.sql` idempotente e auto-curativo — atualização não quebra clone com dados legados.
 - 8 scripts de operação: `install`, `update`, `backup`, `restore`, `reset-password`, `reset-mfa`, `healthcheck` e o assistente de instalação em IA.
-- Imagem publicada em `ghcr.io/melgarafael/deskcommcrm` — a VPS não compila nada.
+- Imagem publicada em `ghcr.io/tiagocburger/deskcommcrm` — a VPS não compila nada.
 
 ### Qualidade
 
@@ -1540,18 +1550,18 @@ Primeira versão marcada do DeskcommCRM. O projeto vinha sendo desenvolvido publ
 
 - **Node 22 é obrigatório para desenvolvimento.** A suíte de invariantes instancia o cliente do Supabase, que exige o `WebSocket` global — nativo apenas a partir do Node 22. Isso não afeta quem apenas hospeda: a VPS roda a imagem pronta.
 
-[Não lançado]: https://github.com/melgarafael/DeskcommCRM/compare/v1.10.1...HEAD
-[1.10.1]: https://github.com/melgarafael/DeskcommCRM/compare/v1.10.0...v1.10.1
-[1.10.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.9.1...v1.10.0
-[1.9.1]: https://github.com/melgarafael/DeskcommCRM/compare/v1.9.0...v1.9.1
-[1.9.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.8.0...v1.9.0
-[1.8.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.7.0...v1.8.0
-[1.7.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.6.0...v1.7.0
-[1.5.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.4.1...v1.5.0
-[1.4.1]: https://github.com/melgarafael/DeskcommCRM/compare/v1.4.0...v1.4.1
-[1.4.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.3.0...v1.4.0
-[1.3.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.2.1...v1.3.0
-[1.2.1]: https://github.com/melgarafael/DeskcommCRM/compare/v1.2.0...v1.2.1
-[1.2.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/melgarafael/DeskcommCRM/releases/tag/v1.0.0
+[Não lançado]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.10.1...HEAD
+[1.10.1]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.10.0...v1.10.1
+[1.10.0]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.9.1...v1.10.0
+[1.9.1]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.9.0...v1.9.1
+[1.9.0]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.8.0...v1.9.0
+[1.8.0]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.7.0...v1.8.0
+[1.7.0]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.6.0...v1.7.0
+[1.5.0]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.4.1...v1.5.0
+[1.4.1]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.2.1...v1.3.0
+[1.2.1]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/TiagoCBurger/PropDeskCRM/releases/tag/v1.0.0

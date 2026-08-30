@@ -227,7 +227,7 @@ rodam = 47, soma = 48 (bate com o disco)
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; sed -n '10,17p' .github/workflows/e2e.yml
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; sed -n '10,17p' .github/workflows/e2e.yml
 ```
 
 **Deu:**
@@ -238,7 +238,7 @@ verify, build-and-size, invariants, e2e, imagens-ok
 (mas o cabeçalho do PRÓPRIO e2e.yml ainda afirma o contrário: "# NÃO-BLOQUEANTE por ausência, não por mordaça: `e2e` não está na lista de checks obrigatórios da branch protection, então falhar aqui não segura merge.")
 ```
 
-**Sugestão:** É check obrigatório — confirme antes de citar: `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts'`. (A data de ativação não é auditável pelo repo; e o cabeçalho de `.github/workflows/e2e.yml` ainda diz que o `e2e` NÃO é obrigatório — esse comentário está podre e contradiz a branch protection.)
+**Sugestão:** É check obrigatório — confirme antes de citar: `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts'`. (A data de ativação não é auditável pelo repo; e o cabeçalho de `.github/workflows/e2e.yml` ainda diz que o `e2e` NÃO é obrigatório — esse comentário está podre e contradiz a branch protection.)
 
 **Vira teste:** tests/unit: nenhum comentário em .github/workflows/ afirma que um check está fora dos obrigatórios sem bater com a lista da branch protection (ou, mais simples: o texto 'não está na lista de checks obrigatórios' não aparece em e2e.yml)
 
@@ -365,7 +365,7 @@ ls tests/e2e/*.spec.ts | wc -l ; awk '/^      FORA_DO_CI:/{f=1;next} /^    steps
 **Mede com:**
 
 ```bash
-gh issue view 63 --repo melgarafael/DeskcommCRM --json number,title,state
+gh issue view 63 --repo TiagoCBurger/PropDeskCRM --json number,title,state
 ```
 
 **Deu:**
@@ -402,7 +402,7 @@ git log --oneline -1 789dfa6 ; git rev-list --count 789dfa6..HEAD
 **Mede com:**
 
 ```bash
-ls tests/e2e/*.spec.ts | wc -l ; gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+ls tests/e2e/*.spec.ts | wc -l ; gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -876,7 +876,7 @@ git log --since="2026-05-14" --oneline -- docs/stories/epics/ | wc -l
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; grep -n 'run: pnpm' .github/workflows/ci.yml .github/workflows/perf.yml
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; grep -n 'run: pnpm' .github/workflows/ci.yml .github/workflows/perf.yml
 ```
 
 **Deu:**
@@ -914,7 +914,7 @@ Test Files 1 passed (1) / Tests 6 passed (6) — e `.github/workflows/ci.yml:38:
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; sed -n '70,79p' CONTRIBUTING.md
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; sed -n '70,79p' CONTRIBUTING.md
 ```
 
 **Deu:**
@@ -935,7 +935,7 @@ verify, build-and-size, invariants, e2e, imagens-ok
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -944,7 +944,7 @@ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_st
 verify, build-and-size, invariants, e2e, imagens-ok
 ```
 
-**Sugestão:** O CI reprova serviço `build:`-only, instalação em tag móvel **e imagem que não constrói** — as três coisas bloqueiam merge. Confira a lista viva com `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts'`;
+**Sugestão:** O CI reprova serviço `build:`-only, instalação em tag móvel **e imagem que não constrói** — as três coisas bloqueiam merge. Confira a lista viva com `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts'`;
 
 **Vira teste:** expect(contexts).toContain('imagens-ok') — assertar que o parêntese "ainda não bloqueia" não sobrevive à ativação do check; ou um teste de doc que proíba a string "ainda não bloqueia merge" em CONTRIBUTING.md enquanto imagens-ok estiver na branch protection
 
@@ -1111,7 +1111,7 @@ Tests 6 passed (6). ESCOPO declarado: "só app/app/** ... O admin de plataforma 
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -1120,7 +1120,7 @@ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_st
 verify, build-and-size, invariants, e2e, imagens-ok
 ```
 
-**Sugestão:** (pt-br: trocar o numeral pela régua e acrescentar a linha do `imagens-ok`.) Texto pronto: "**The required checks** to merge into `main` are whatever branch protection says — that is the ruler, not this table: `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(\", \")'`" + nova linha da tabela: "| `imagens-ok` | fails when any of the three published Docker images (`app`, `worker`, `scheduler`) does not build — job `imagens-ok` in `.github/workflows/publish-image.yml` |"
+**Sugestão:** (pt-br: trocar o numeral pela régua e acrescentar a linha do `imagens-ok`.) Texto pronto: "**The required checks** to merge into `main` are whatever branch protection says — that is the ruler, not this table: `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(\", \")'`" + nova linha da tabela: "| `imagens-ok` | fails when any of the three published Docker images (`app`, `worker`, `scheduler`) does not build — job `imagens-ok` in `.github/workflows/publish-image.yml` |"
 
 **Vira teste:** tests/unit/readme-checks-obrigatorios.test.ts cobrindo os três arquivos
 
@@ -1203,7 +1203,7 @@ git ls-files 'docs/**/*.md' | wc -l ; find docs -name '*.md' | wc -l ; grep -n '
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; sed -n '356,358p' README.en.md
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; sed -n '356,358p' README.en.md
 ```
 
 **Deu:**
@@ -1215,7 +1215,7 @@ README.en.md:357: pnpm test:db
 => cobre verify + build-and-size + invariants; NÃO cobre e2e nem imagens-ok.
 ```
 
-**Sugestão:** (pt-br: dizer que a linha é só o que roda local.) Texto pronto: "That line is everything you can run on **your own machine**, on purpose: running half of them and discovering the rest as a red surprise after hours of waiting is the worst first experience this repository knows how to deliver. It covers `verify`, `build-and-size` and `invariants`; the other two required checks (`e2e` and `imagens-ok`) only run in CI. The live list comes from `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(\", \")'`."
+**Sugestão:** (pt-br: dizer que a linha é só o que roda local.) Texto pronto: "That line is everything you can run on **your own machine**, on purpose: running half of them and discovering the rest as a red surprise after hours of waiting is the worst first experience this repository knows how to deliver. It covers `verify`, `build-and-size` and `invariants`; the other two required checks (`e2e` and `imagens-ok`) only run in CI. The live list comes from `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(\", \")'`."
 
 ### L379 · FRAGIL · gravidade baixa · pendencia
 
@@ -1376,7 +1376,7 @@ Tests 6 passed (6). ESCOPO: "só app/app/**"; NAV_ALLOWLIST com 7 rotas isentas.
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -1385,7 +1385,7 @@ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_st
 verify, build-and-size, invariants, e2e, imagens-ok
 ```
 
-**Sugestão:** (pt-br: trocar o numeral pela régua e acrescentar a linha do `imagens-ok`.) Texto pronto: "**Los checks obligatorios** para mergear en `main` son los de la branch protection — esa es la regla, no esta tabla: `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(\", \")'`" + nueva fila: "| `imagens-ok` | reprueba cuando alguna de las tres imágenes Docker publicadas (`app`, `worker`, `scheduler`) no construye — job `imagens-ok` en `.github/workflows/publish-image.yml` |"
+**Sugestão:** (pt-br: trocar o numeral pela régua e acrescentar a linha do `imagens-ok`.) Texto pronto: "**Los checks obligatorios** para mergear en `main` son los de la branch protection — esa es la regla, no esta tabla: `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(\", \")'`" + nueva fila: "| `imagens-ok` | reprueba cuando alguna de las tres imágenes Docker publicadas (`app`, `worker`, `scheduler`) no construye — job `imagens-ok` en `.github/workflows/publish-image.yml` |"
 
 **Vira teste:** tests/unit/readme-checks-obrigatorios.test.ts cobrindo os três arquivos
 
@@ -1468,7 +1468,7 @@ git ls-files 'docs/**/*.md' | wc -l ; find docs -name '*.md' | wc -l ; grep -n '
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; sed -n '357,358p' README.es.md
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; sed -n '357,358p' README.es.md
 ```
 
 **Deu:**
@@ -1480,7 +1480,7 @@ README.es.md:358: pnpm test:db
 => cobre verify + build-and-size + invariants; NÃO cobre e2e nem imagens-ok.
 ```
 
-**Sugestão:** (pt-br: dizer que a linha é só o que roda local.) Texto pronto: "Esa línea es todo lo que puedes correr en **tu propia máquina**, a propósito: correr solo la mitad y descubrir el resto como sorpresa roja después de horas de espera es la peor primera experiencia que este repositorio sabe entregar. Cubre `verify`, `build-and-size` e `invariants`; los otros dos checks obligatorios (`e2e` e `imagens-ok`) solo corren en el CI. La lista viva sale de `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(\", \")'`."
+**Sugestão:** (pt-br: dizer que a linha é só o que roda local.) Texto pronto: "Esa línea es todo lo que puedes correr en **tu propia máquina**, a propósito: correr solo la mitad y descubrir el resto como sorpresa roja después de horas de espera es la peor primera experiencia que este repositorio sabe entregar. Cubre `verify`, `build-and-size` e `invariants`; los otros dos checks obligatorios (`e2e` e `imagens-ok`) solo corren en el CI. La lista viva sale de `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(\", \")'`."
 
 ### L380 · FRAGIL · gravidade baixa · pendencia
 
@@ -1680,7 +1680,7 @@ find app/api/v1 -name 'route.ts' | wc -l
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -1689,7 +1689,7 @@ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_st
 verify, build-and-size, invariants, e2e, imagens-ok
 ```
 
-**Sugestão:** **Os checks obrigatórios** pra mergear na `main` são os da branch protection — e a régua é ela, não esta tabela:  ```console $ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' verify, build-and-size, invariants, e2e, imagens-ok ```  (e acrescentar a linha que falta na tabela) | `imagens-ok` | reprova quando qualquer uma das três imagens Docker publicadas (`app`, `worker`, `scheduler`) não constrói — job `imagens-ok` em `.github/workflows/publish-image.yml` |
+**Sugestão:** **Os checks obrigatórios** pra mergear na `main` são os da branch protection — e a régua é ela, não esta tabela:  ```console $ gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' verify, build-and-size, invariants, e2e, imagens-ok ```  (e acrescentar a linha que falta na tabela) | `imagens-ok` | reprova quando qualquer uma das três imagens Docker publicadas (`app`, `worker`, `scheduler`) não constrói — job `imagens-ok` em `.github/workflows/publish-image.yml` |
 
 **Vira teste:** tests/unit/readme-checks-obrigatorios.test.ts: para cada check citado na tabela do README, `expect(jobsDeWorkflows()).toContain(check)`; e o README não pode declarar um numeral ("Quatro"/"Four"/"Cuatro") de checks
 
@@ -1786,7 +1786,7 @@ docs/index.md:13:Mapa dos **149** arquivos `.md` de `docs/` ... régua: `git ls-
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'; grep -n 'pnpm typecheck && pnpm lint' README.md
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'; grep -n 'pnpm typecheck && pnpm lint' README.md
 ```
 
 **Deu:**
@@ -1798,7 +1798,7 @@ README.md:381: pnpm test:db
 => a linha cobre `verify` + `build-and-size` + `invariants`. NAO cobre `e2e` nem `imagens-ok`, que sao obrigatorios.
 ```
 
-**Sugestão:** Essa linha é tudo o que dá pra rodar na **sua** máquina, de propósito: rodar só metade e descobrir o resto como surpresa vermelha depois de horas de espera é a pior primeira experiência que este repositório sabe entregar. Ela cobre `verify`, `build-and-size` e `invariants` — os outros dois checks obrigatórios (`e2e` e `imagens-ok`) só rodam no CI. A lista viva sai de `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'`.
+**Sugestão:** Essa linha é tudo o que dá pra rodar na **sua** máquina, de propósito: rodar só metade e descobrir o resto como surpresa vermelha depois de horas de espera é a pior primeira experiência que este repositório sabe entregar. Ela cobre `verify`, `build-and-size` e `invariants` — os outros dois checks obrigatórios (`e2e` e `imagens-ok`) só rodam no CI. A lista viva sai de `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'`.
 
 **Vira teste:** tests/unit/readme-checks-obrigatorios.test.ts: a frase "lista completa dos gates obrigatórios" só pode existir se o comando local cobrir TODOS os contexts da branch protection
 
@@ -1894,7 +1894,7 @@ gh release list --limit 6 ; grep -n 'TARGET_TAG=' hostgator-setup-kit/update.sh 
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/security-advisories --jq '.[] | "\(.ghsa_id) criado=\(.created_at) estado=\(.state)"'
+gh api repos/TiagoCBurger/PropDeskCRM/security-advisories --jq '.[] | "\(.ghsa_id) criado=\(.created_at) estado=\(.state)"'
 ```
 
 **Deu:**
@@ -1954,7 +1954,7 @@ grep -n 'SUPABASE_ACCESS_TOKEN\|Criando o projeto Supabase' hostgator-setup-kit/
 **Mede com:**
 
 ```bash
-for i in deskcommcrm deskcomm-worker deskcomm-scheduler; do for t in 1.3.0 stable; do echo -n "$i:$t "; docker buildx imagetools inspect ghcr.io/melgarafael/$i:$t --format '{{.Manifest.Digest}}'; done; done
+for i in deskcommcrm deskcomm-worker deskcomm-scheduler; do for t in 1.3.0 stable; do echo -n "$i:$t "; docker buildx imagetools inspect ghcr.io/tiagocburger/$i:$t --format '{{.Manifest.Digest}}'; done; done
 ```
 
 **Deu:**
@@ -2057,7 +2057,7 @@ grep -rn 'IMAGE_NAME' .github/ ; grep -n 'images:' .github/workflows/publish-ima
 **Mede com:**
 
 ```bash
-grep -c 'melgarafael' tests/unit/packaging-artefato-do-cliente.test.ts ; grep -rln 'ghcr.io/melgarafael' --exclude-dir=node_modules . | grep -E 'tests/|hostgator-setup-kit/test'
+grep -c 'melgarafael' tests/unit/packaging-artefato-do-cliente.test.ts ; grep -rln 'ghcr.io/tiagocburger' --exclude-dir=node_modules . | grep -E 'tests/|hostgator-setup-kit/test'
 ```
 
 **Deu:**
@@ -2068,9 +2068,9 @@ tests/shell/update-guard.test.sh
 hostgator-setup-kit/test-validators.sh
 ```
 
-**Sugestão:** ... os testes que casam a string (`tests/shell/update-guard.test.sh`, `hostgator-setup-kit/test-validators.sh`) e os docs — **mais** o `.env` de cada instalação viva, que é a parte que nenhum commit alcança. (`tests/unit/packaging-artefato-do-cliente.test.ts` entra no custo por outro motivo: ele guarda a forma do compose e os gatilhos do workflow, não a string do namespace.) Régua para reconferir antes de citar este parágrafo: `grep -rln "ghcr.io/melgarafael" --exclude-dir=node_modules .`
+**Sugestão:** ... os testes que casam a string (`tests/shell/update-guard.test.sh`, `hostgator-setup-kit/test-validators.sh`) e os docs — **mais** o `.env` de cada instalação viva, que é a parte que nenhum commit alcança. (`tests/unit/packaging-artefato-do-cliente.test.ts` entra no custo por outro motivo: ele guarda a forma do compose e os gatilhos do workflow, não a string do namespace.) Régua para reconferir antes de citar este parágrafo: `grep -rln "ghcr.io/tiagocburger" --exclude-dir=node_modules .`
 
-**Vira teste:** tests/unit/packaging-artefato-do-cliente.test.ts: it("o ADR só lista como guarda-namespace arquivos que contêm a string") — para cada path citado na §D1 como teste que 'casa a string', exigir grep('ghcr.io/melgarafael') > 0
+**Vira teste:** tests/unit/packaging-artefato-do-cliente.test.ts: it("o ADR só lista como guarda-namespace arquivos que contêm a string") — para cada path citado na §D1 como teste que 'casa a string', exigir grep('ghcr.io/tiagocburger') > 0
 
 ### L126 · FALSA · gravidade alta · pendencia
 
@@ -2079,7 +2079,7 @@ hostgator-setup-kit/test-validators.sh
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -2088,7 +2088,7 @@ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_st
 verify, build-and-size, invariants, e2e, imagens-ok
 ```
 
-**Sugestão:** **Ganhamos também o gate:** `imagens-ok` é status check obrigatório da `main` — merge com imagem quebrada não passa. Régua, porque esta linha já ficou um dia inteiro afirmando o contrário depois de o check já bloquear:  ```console $ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' verify, build-and-size, invariants, e2e, imagens-ok ```  Em PR a imagem é construída e descartada: o gate é o build, não a publicação (`push: ${{ github.event_name != 'pull_request' }}`).
+**Sugestão:** **Ganhamos também o gate:** `imagens-ok` é status check obrigatório da `main` — merge com imagem quebrada não passa. Régua, porque esta linha já ficou um dia inteiro afirmando o contrário depois de o check já bloquear:  ```console $ gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' verify, build-and-size, invariants, e2e, imagens-ok ```  Em PR a imagem é construída e descartada: o gate é o build, não a publicação (`push: ${{ github.event_name != 'pull_request' }}`).
 
 **Vira teste:** tests/unit/packaging-artefato-do-cliente.test.ts: it("o ADR não afirma que imagens-ok é não-bloqueante") — ler docs/adr/0001-packaging-e-distribuicao.md e reprovar se casar /imagens-ok[^\n]*(não bloqueia|ainda não|entrar na branch protection)/i, já que o job existe em .github/workflows/publish-image.yml
 
@@ -2099,7 +2099,7 @@ verify, build-and-size, invariants, e2e, imagens-ok
 **Mede com:**
 
 ```bash
-TOKEN=$(curl -s 'https://ghcr.io/token?scope=repository:melgarafael/deskcommcrm:pull&service=ghcr.io' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])'); curl -s -H "Authorization: Bearer $TOKEN" https://ghcr.io/v2/melgarafael/deskcommcrm/tags/list | python3 -c 'import sys,json;t=json.load(sys.stdin)["tags"];print(len(t),sorted(t))' ; curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" https://ghcr.io/v2/melgarafael/deskcommcrm/manifests/latest
+TOKEN=$(curl -s 'https://ghcr.io/token?scope=repository:tiagocburger/deskcommcrm:pull&service=ghcr.io' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])'); curl -s -H "Authorization: Bearer $TOKEN" https://ghcr.io/v2/melgarafael/deskcommcrm/tags/list | python3 -c 'import sys,json;t=json.load(sys.stdin)["tags"];print(len(t),sorted(t))' ; curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" https://ghcr.io/v2/melgarafael/deskcommcrm/manifests/latest
 ```
 
 **Deu:**
@@ -2269,7 +2269,7 @@ deskcommcrm:stable APP_VERSION=1.3.0 | deskcommcrm:latest APP_VERSION=840917e
 gh release list: v1.3.0 … Latest … 2026-08-13T19:58:03Z
 ```
 
-**Sugestão:** > **Onde já vale.** Toda imagem publicada a partir da v1.3.0 carrega `APP_VERSION` — medido em 2026-08-14 direto no registry: `deskcommcrm:1.3.0` e `deskcomm-worker:1.3.0` trazem `APP_VERSION=1.3.0`; a `1.2.1` não traz nenhuma. Quem ainda roda imagem anterior à 1.3.0 responde `desconhecido`, que é a resposta honesta e o motivo de o fallback não ser mais um número plausível. Para saber o que a SUA imagem carrega: `docker run --rm ghcr.io/melgarafael/deskcommcrm:<tag> node -e 'console.log(process.env.APP_VERSION)'`.
+**Sugestão:** > **Onde já vale.** Toda imagem publicada a partir da v1.3.0 carrega `APP_VERSION` — medido em 2026-08-14 direto no registry: `deskcommcrm:1.3.0` e `deskcomm-worker:1.3.0` trazem `APP_VERSION=1.3.0`; a `1.2.1` não traz nenhuma. Quem ainda roda imagem anterior à 1.3.0 responde `desconhecido`, que é a resposta honesta e o motivo de o fallback não ser mais um número plausível. Para saber o que a SUA imagem carrega: `docker run --rm ghcr.io/tiagocburger/deskcommcrm:<tag> node -e 'console.log(process.env.APP_VERSION)'`.
 
 ### L234 · FALSA · gravidade media · ponteiro
 
@@ -2360,7 +2360,7 @@ gh auth status 2>&1 | grep -i 'scopes'
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -2369,7 +2369,7 @@ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_st
 verify, build-and-size, invariants, e2e, imagens-ok
 ```
 
-**Sugestão:** | CI (mecânico) | `imagens-ok` em `publish-image.yml` | imagem quebrada reprova o merge — é required check da `main`. Confira na fonte antes de confiar nesta linha: `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts'` |
+**Sugestão:** | CI (mecânico) | `imagens-ok` em `publish-image.yml` | imagem quebrada reprova o merge — é required check da `main`. Confira na fonte antes de confiar nesta linha: `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts'` |
 
 **Vira teste:** tests/unit/packaging-artefato-do-cliente.test.ts: o texto de docs/doctrine/packaging.md e de CONTRIBUTING.md não pode conter /assim que o check entrar|ainda não bloqueia merge|ainda não é obrigatório/ — congela a frase de pendência que já apodreceu duas vezes neste mesmo arquivo
 
@@ -2591,7 +2591,7 @@ agent-turn.html  agent-turn.workflow.json  atualizacao-self-service.architecture
 **Mede com:**
 
 ```bash
-docker buildx imagetools inspect ghcr.io/melgarafael/deskcommcrm:stable --format '{{.Manifest.Digest}}' ; docker buildx imagetools inspect ghcr.io/melgarafael/deskcommcrm:1.3.0 --format '{{.Manifest.Digest}}'
+docker buildx imagetools inspect ghcr.io/tiagocburger/deskcommcrm:stable --format '{{.Manifest.Digest}}' ; docker buildx imagetools inspect ghcr.io/tiagocburger/deskcommcrm:1.3.0 --format '{{.Manifest.Digest}}'
 ```
 
 **Deu:**
@@ -2611,7 +2611,7 @@ stable → sha256:c4bc70b606c8e63f3fc9557ed31b1a211b58beaac3b67509eb0c8acbc0dbae
 **Mede com:**
 
 ```bash
-for i in deskcommcrm deskcomm-worker deskcomm-scheduler; do for t in 1.3.0 stable; do echo -n "$i:$t "; docker buildx imagetools inspect ghcr.io/melgarafael/$i:$t --format '{{.Manifest.Digest}}'; done; done
+for i in deskcommcrm deskcomm-worker deskcomm-scheduler; do for t in 1.3.0 stable; do echo -n "$i:$t "; docker buildx imagetools inspect ghcr.io/tiagocburger/$i:$t --format '{{.Manifest.Digest}}'; done; done
 ```
 
 **Deu:**
@@ -2737,7 +2737,7 @@ grep -n "U6" docs/testing/user-journey-map.md | head -10
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; ghcr_status deskcommcrm stable
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")' ; ghcr_status deskcommcrm stable
 ```
 
 **Deu:**
@@ -2756,7 +2756,7 @@ deskcommcrm latest=200 stable=200 1.3.0=200 (idem worker e scheduler)
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -2765,7 +2765,7 @@ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_st
 verify, build-and-size, invariants, e2e, imagens-ok
 ```
 
-**Sugestão:** | PR de contribuidor | `imagens-ok` rodava e informava; não bloqueava. **Desde 2026-08-14 bloqueia** — é required check da `main` (`gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts\|join(", ")'`) |
+**Sugestão:** | PR de contribuidor | `imagens-ok` rodava e informava; não bloqueava. **Desde 2026-08-14 bloqueia** — é required check da `main` (`gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts\|join(", ")'`) |
 
 
 ## `docs/runbooks/deploy.md` — 7
@@ -2867,7 +2867,7 @@ grep -n "TARGET_TAG" hostgator-setup-kit/update.sh | head -3 ; grep -n "stable" 
 
 ```
 update.sh:39: [ -n "$TARGET_TAG" ] || TARGET_TAG="$(git tag -l 'v*' --sort=-v:refname | head -1)"
-docker-compose.prod.yml:35 image: ${APP_IMAGE:-ghcr.io/melgarafael/deskcommcrm:stable} (idem worker:92 e scheduler:196)
+docker-compose.prod.yml:35 image: ${APP_IMAGE:-ghcr.io/tiagocburger/deskcommcrm:stable} (idem worker:92 e scheduler:196)
 docs/DEPLOY-CHECKLIST.md:45: - [ ] `gh release create vX.Y.Z` com as notas do CHANGELOG
 docs/doctrine/packaging.md:340: [ ] 9. `gh release create vX.Y.Z`
 Medido no GHCR: deskcommcrm:latest revision=840917ed (topo da main) vs deskcommcrm:stable version=1.3.0 revision=9bd59e9.
@@ -2893,7 +2893,7 @@ update.sh:200: "if ! dc pull; then ... se um run de publicação quebrou ... o c
 GHCR (medido agora): as três respondem HTTP 200 em :latest e :stable.
 ```
 
-**Sugestão:** publica **três** imagens — `deskcommcrm`, `deskcomm-worker` e `deskcomm-scheduler` — sob a mesma tag de versão. Sob a mesma tag, não necessariamente as três: a matriz roda com `fail-fast: false` e cada job empurra a sua, então uma versão pode existir para duas imagens e faltar na terceira (é exatamente o caso que o `dc pull` do `update.sh` trata). Antes de anunciar uma versão, confirme as três: `for i in deskcommcrm deskcomm-worker deskcomm-scheduler; do docker buildx imagetools inspect ghcr.io/melgarafael/$i:<versão> --format '{{.Manifest.Digest}}'; done`
+**Sugestão:** publica **três** imagens — `deskcommcrm`, `deskcomm-worker` e `deskcomm-scheduler` — sob a mesma tag de versão. Sob a mesma tag, não necessariamente as três: a matriz roda com `fail-fast: false` e cada job empurra a sua, então uma versão pode existir para duas imagens e faltar na terceira (é exatamente o caso que o `dc pull` do `update.sh` trata). Antes de anunciar uma versão, confirme as três: `for i in deskcommcrm deskcomm-worker deskcomm-scheduler; do docker buildx imagetools inspect ghcr.io/tiagocburger/$i:<versão> --format '{{.Manifest.Digest}}'; done`
 
 ### L108 · FRAGIL · gravidade media · contagem
 
@@ -2926,7 +2926,7 @@ docs/adr/0001-packaging-e-distribuicao.md:148: "4–34 min" não existe no repo
 **Mede com:**
 
 ```bash
-docker buildx imagetools inspect ghcr.io/melgarafael/deskcomm-worker:stable 2>&1 | awk '/^Digest:/{print $2; exit}'
+docker buildx imagetools inspect ghcr.io/tiagocburger/deskcomm-worker:stable 2>&1 | awk '/^Digest:/{print $2; exit}'
 ```
 
 **Deu:**
@@ -3046,7 +3046,7 @@ P4 (mesmo arquivo): "**nenhuma** chave do `.env` sumiu (39 → 43: as 4 novas s�
 **Mede com:**
 
 ```bash
-docker buildx imagetools inspect ghcr.io/melgarafael/deskcomm-worker:stable 2>&1 | awk '/^Digest:/{print $2;exit}'; docker buildx imagetools inspect ghcr.io/melgarafael/deskcomm-worker:1.3.0 2>&1 | awk '/^Digest:/{print $2;exit}'; git rev-parse v1.3.0^{commit}
+docker buildx imagetools inspect ghcr.io/tiagocburger/deskcomm-worker:stable 2>&1 | awk '/^Digest:/{print $2;exit}'; docker buildx imagetools inspect ghcr.io/tiagocburger/deskcomm-worker:1.3.0 2>&1 | awk '/^Digest:/{print $2;exit}'; git rev-parse v1.3.0^{commit}
 ```
 
 **Deu:**
@@ -3461,7 +3461,7 @@ docs/architecture/gestao-funis.architecture.json
 **Mede com:**
 
 ```bash
-ls tests/e2e/*.spec.ts | wc -l; awk '/SPECS_PARTE_1:/,/FORA_DO_CI:/' .github/workflows/e2e.yml | grep -v '^ *#' | grep -oE '[a-z0-9-]+\.spec\.ts' | wc -l; gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+ls tests/e2e/*.spec.ts | wc -l; awk '/SPECS_PARTE_1:/,/FORA_DO_CI:/' .github/workflows/e2e.yml | grep -v '^ *#' | grep -oE '[a-z0-9-]+\.spec\.ts' | wc -l; gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -3813,7 +3813,7 @@ ls: vercel.json: No such file or directory
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -3822,7 +3822,7 @@ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_st
 verify, build-and-size, invariants, e2e, imagens-ok
 ```
 
-**Sugestão:** Apagar a pergunta 7. Está respondida: são cinco checks obrigatórios (`verify, build-and-size, invariants, e2e, imagens-ok`), e o gate de RLS (`invariants`) é bloqueante. A régua fica no lugar da resposta: `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'`.
+**Sugestão:** Apagar a pergunta 7. Está respondida: são cinco checks obrigatórios (`verify, build-and-size, invariants, e2e, imagens-ok`), e o gate de RLS (`invariants`) é bloqueante. A régua fica no lugar da resposta: `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'`.
 
 ### L295 · FALSA · gravidade alta · pendencia
 
@@ -4122,7 +4122,7 @@ ls tests/invariants/*.test.ts | wc -l; grep -n 'exclude' vitest.config.ts
 **Mede com:**
 
 ```bash
-ls tests/e2e/*.spec.ts | wc -l; awk '/SPECS_PARTE_1:/,/FORA_DO_CI:/' .github/workflows/e2e.yml | grep -v '^ *#' | grep -oE '[a-z0-9-]+\.spec\.ts' | wc -l; gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+ls tests/e2e/*.spec.ts | wc -l; awk '/SPECS_PARTE_1:/,/FORA_DO_CI:/' .github/workflows/e2e.yml | grep -v '^ *#' | grep -oE '[a-z0-9-]+\.spec\.ts' | wc -l; gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -4172,7 +4172,7 @@ verify roda: Typecheck, Lint, Channel provider leak, Unit tests, Kit self-host (
 ci.yml: verify, invariants | e2e.yml: e2e | perf.yml: build-and-size | publish-image.yml: build-and-push, imagens-ok
 ```
 
-**Sugestão:** | 15 | CI executando verificações | ✅ | `ci.yml` tem 2 jobs: `verify` (typecheck + lint + lint:channels + test:unit + **test:shell**, o único gate que exercita o `update.sh` do kit) e `invariants` (`pnpm test:db` — isolamento RLS + invariantes de governança, job paralelo, timeout 20min). `e2e.yml` roda os Playwright, `perf.yml` faz build + bundle size, `publish-image.yml` publica no GHCR **e carrega o job `imagens-ok`**. Falta só `format:check`. Os cinco checks obrigatórios: `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts\|join(", ")'` |
+**Sugestão:** | 15 | CI executando verificações | ✅ | `ci.yml` tem 2 jobs: `verify` (typecheck + lint + lint:channels + test:unit + **test:shell**, o único gate que exercita o `update.sh` do kit) e `invariants` (`pnpm test:db` — isolamento RLS + invariantes de governança, job paralelo, timeout 20min). `e2e.yml` roda os Playwright, `perf.yml` faz build + bundle size, `publish-image.yml` publica no GHCR **e carrega o job `imagens-ok`**. Falta só `format:check`. Os cinco checks obrigatórios: `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts\|join(", ")'` |
 
 ### L75 · FALSA · gravidade media · ponteiro
 
@@ -4276,7 +4276,7 @@ grep -cE 'IMPERSONATE_COOKIE_SECRET|INTERNAL_CRON_SECRET|LGPD_SIGNING_KEY|LGPD_D
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -4285,7 +4285,7 @@ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_st
 verify, build-and-size, invariants, e2e, imagens-ok
 ```
 
-**Sugestão:** Remover deste bloco e registrar como respondido: a branch protection da `main` exige **cinco** checks — `verify, build-and-size, invariants, e2e, imagens-ok`. O gate de RLS (`invariants`) é **bloqueante**. Não é invisível no checkout: `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'` responde em um comando, e é essa linha que deve ficar no doc no lugar da lista.
+**Sugestão:** Remover deste bloco e registrar como respondido: a branch protection da `main` exige **cinco** checks — `verify, build-and-size, invariants, e2e, imagens-ok`. O gate de RLS (`invariants`) é **bloqueante**. Não é invisível no checkout: `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'` responde em um comando, e é essa linha que deve ficar no doc no lugar da lista.
 
 
 # REGISTRO — 15 achados
@@ -4329,7 +4329,7 @@ grep -n '^## ' CHANGELOG.md ; grep -n '^\[' CHANGELOG.md
 Headings: Não lançado, 1.3.0, 1.2.1, 1.2.0, 1.1.0, 1.0.0. Definições de link: Não lançado, 1.2.1, 1.2.0, 1.1.0, 1.0.0. **Falta `[1.3.0]:`** — o único heading de versão sem destino. No GitHub ele renderiza como texto literal `[1.3.0]`, enquanto os vizinhos viram link para o diff.
 ```
 
-**Sugestão:** Acrescentar, entre a linha de `[Não lançado]` e a de `[1.2.1]`:  [1.3.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.2.1...v1.3.0
+**Sugestão:** Acrescentar, entre a linha de `[Não lançado]` e a de `[1.2.1]`:  [1.3.0]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.2.1...v1.3.0
 
 **Vira teste:** tests/unit/changelog-links.test.ts — todo heading `## [X.Y.Z]` tem uma linha `[X.Y.Z]: https://…` correspondente. Sabotagem que reprova: apagar a definição de `[1.2.1]`.
 
@@ -4503,7 +4503,7 @@ v1.0.0 tinha 8 arquivos `.sh`, mas um deles é `_common.sh` (biblioteca comparti
 
 ### L337 · FALSA · gravidade alta · sobre-o-codigo
 
-> Imagem publicada em `ghcr.io/melgarafael/deskcommcrm` — a VPS não compila nada.
+> Imagem publicada em `ghcr.io/tiagocburger/deskcommcrm` — a VPS não compila nada.
 
 **Mede com:**
 
@@ -4514,10 +4514,10 @@ git show v1.0.0:docker-compose.prod.yml | grep -nE '^  [a-z0-9_-]+:|image:|build
 **Deu:**
 
 ```
-Em v1.0.0: `app` (linha 19) tem `image: ${APP_IMAGE:-ghcr.io/melgarafael/deskcommcrm:latest}`; `worker` (linha 42) tem **`build:`** e NENHUM `image:`; `scheduler` (linha 112) é `alpine:3.20` com `apk add` no `command:`. Ou seja, na própria v1.0.0 a VPS compilava o worker. O mesmo arquivo admite isso na linha 22: "O worker … era compilado dentro do seu servidor no dia da instalação".
+Em v1.0.0: `app` (linha 19) tem `image: ${APP_IMAGE:-ghcr.io/tiagocburger/deskcommcrm:latest}`; `worker` (linha 42) tem **`build:`** e NENHUM `image:`; `scheduler` (linha 112) é `alpine:3.20` com `apk add` no `command:`. Ou seja, na própria v1.0.0 a VPS compilava o worker. O mesmo arquivo admite isso na linha 22: "O worker … era compilado dentro do seu servidor no dia da instalação".
 ```
 
-**Sugestão:** - Imagem publicada em `ghcr.io/melgarafael/deskcommcrm` — a VPS não compila **o app**. (O worker ainda era compilado no seu servidor nesta versão; isso só foi corrigido na 1.3.0.)
+**Sugestão:** - Imagem publicada em `ghcr.io/tiagocburger/deskcommcrm` — a VPS não compila **o app**. (O worker ainda era compilado no seu servidor nesta versão; isso só foi corrigido na 1.3.0.)
 
 **Vira teste:** tests/unit/packaging-sem-build-only.test.ts (se ainda não existir com este alcance) — todo serviço de `docker-compose.prod.yml` declara `image:`; serviço com `build:` e sem `image:` reprova. Sabotagem que reprova: remover o `image:` do `worker`.
 
@@ -4528,7 +4528,7 @@ Em v1.0.0: `app` (linha 19) tem `image: ${APP_IMAGE:-ghcr.io/melgarafael/deskcom
 **Mede com:**
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 **Deu:**
@@ -4537,7 +4537,7 @@ gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_st
 verify, build-and-size, invariants, e2e, imagens-ok
 ```
 
-**Sugestão:** - CI com portões obrigatórios na `main` — na 1.0.0 eram dois, `verify` (typecheck, lint, testes unitários) e `invariants`. A lista em vigor hoje é sempre esta, medida na fonte: `gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'`.
+**Sugestão:** - CI com portões obrigatórios na `main` — na 1.0.0 eram dois, `verify` (typecheck, lint, testes unitários) e `invariants`. A lista em vigor hoje é sempre esta, medida na fonte: `gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'`.
 
 **Vira teste:** Não é caso de teste no CHANGELOG (proteção de branch não tem histórico consultável). O padrão certo é o que o CLAUDE.md já usa: publicar o comando, não o resultado.
 
@@ -4561,7 +4561,7 @@ v1.0.0: 56 arquivos (o número da frase confere na tag). HEAD: 103 arquivos, 682
 
 ### L349 · FALSA · gravidade media · ponteiro
 
-> [Não lançado]: https://github.com/melgarafael/DeskcommCRM/compare/v1.2.1...HEAD
+> [Não lançado]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.2.1...HEAD
 
 **Mede com:**
 
@@ -4575,7 +4575,7 @@ grep -n '^\[' CHANGELOG.md ; git tag --list | sort -V | tail -3
 Definições presentes: Não lançado (v1.2.1...HEAD), 1.2.1, 1.2.0, 1.1.0, 1.0.0. Tags existentes: v1.2.0, v1.2.1, **v1.3.0**. O comparador de "Não lançado" ainda parte da v1.2.1, então o link mostra a 1.3.0 inteira como se fosse trabalho não lançado.
 ```
 
-**Sugestão:** [Não lançado]: https://github.com/melgarafael/DeskcommCRM/compare/v1.3.0...HEAD
+**Sugestão:** [Não lançado]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.3.0...HEAD
 
 **Vira teste:** tests/unit/changelog-links.test.ts — a definição de `[Não lançado]` deve comparar contra a MAIOR tag existente (`git tag --sort=-v:refname | head -1`). Sabotagem que reprova: publicar uma tag nova sem atualizar a linha.
 
@@ -4710,7 +4710,7 @@ QUEBRADOS: []
 > Obrigatórios no merge: `verify`, `build-and-size`, `invariants`.
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '{contexts:.required_status_checks.contexts, strict:.required_status_checks.strict, reviews:.required_pull_request_reviews}'
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '{contexts:.required_status_checks.contexts, strict:.required_status_checks.strict, reviews:.required_pull_request_reviews}'
 ```
 
 ```
@@ -4807,7 +4807,7 @@ grep -n 'IMPERSONATE_COOKIE_SECRET\|INTERNAL_CRON_SECRET\|LGPD_SIGNING_KEY' .env
 > **Ressalva:** esse E2E **não roda no CI** — e é a única prova automatizada do guard. … | T6 | Guard de SSRF existe; o E2E que o prova não roda no CI | 🟢 |
 
 ```bash
-grep -n 'vps-webhook-outbound-ssrf' .github/workflows/e2e.yml; gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
+grep -n 'vps-webhook-outbound-ssrf' .github/workflows/e2e.yml; gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
 ```
 
 ```
@@ -4927,7 +4927,7 @@ ls: .superpowers/evidence/vps-qa: No such file or directory
 > **Falta um passo do mantenedor:** incluir `build-and-push` na branch protection. Enquanto não estiver lá, o check informa mas não barra.
 
 ```bash
-gh api repos/melgarafael/DeskcommCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'; sed -n '155,178p' .github/workflows/publish-image.yml
+gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'; sed -n '155,178p' .github/workflows/publish-image.yml
 ```
 
 ```

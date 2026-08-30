@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Obrigado por reportar! Para **vulnerabilidades de segurança**, NÃO abra issue — use o [relato privado](https://github.com/melgarafael/DeskcommCRM/security/advisories/new).
+        Obrigado por reportar! Para **vulnerabilidades de segurança**, NÃO abra issue — use o [relato privado](https://github.com/TiagoCBurger/PropDeskCRM/security/advisories/new).
   - type: textarea
     id: what-happened
     attributes:

@@ -29,7 +29,7 @@ enxergou o defeito mais caro, que era o motivo real para escrever esta doutrina.
 
 ## Decisões
 
-### D1 — O namespace é `ghcr.io/melgarafael/*`. Não migramos para uma org.
+### D1 — O namespace é `ghcr.io/tiagocburger/*`. Não migramos para uma org.
 
 **Escolhido porque** é o namespace que o CI já publica (`IMAGE_NAME: ${{ github.repository }}`),
 que o compose já consome, e — decisivo — que está **gravado no `.env` de cada cliente
@@ -46,7 +46,7 @@ mudança que as consertaria — o clássico problema de atualizar o atualizador.
 (`tests/shell/update-guard.test.sh`, `hostgator-setup-kit/test-validators.sh`,
 `tests/unit/packaging-artefato-do-cliente.test.ts`) e os docs — **mais** o `.env` de cada
 instalação viva, que é a parte que nenhum commit alcança. Régua para reconferir antes de
-citar este parágrafo: `grep -rln "ghcr.io/melgarafael" --exclude-dir=node_modules .`
+citar este parágrafo: `grep -rln "ghcr.io/tiagocburger" --exclude-dir=node_modules .`
 
 **Reconsideraríamos se:** o projeto ganhar mantenedores com necessidade de publicar sem
 credencial pessoal, ou o repositório mudar de dono. Nesse caso a migração é **aditiva**:
@@ -142,7 +142,7 @@ porque um diagnóstico errado que sobrevive vira premissa de decisões futuras.
 | Alegação | O que a medição mostrou |
 |---|---|
 | "o `Packages` do repo está vazio" | 10 tags publicadas e públicas; `tags/list` anônimo responde, manifest de `latest` = 200. Provável causa do erro: `gh api users/…/packages` devolve **403** sem escopo `read:packages` — instrumento cego lido como ausência |
-| "o compose aponta para `ghcr.io/deskcommcrm/deskcommcrm`" | aponta para `ghcr.io/melgarafael/deskcommcrm`. A org `deskcommcrm` não existe (404). A string aparecia num `git clone` de `docs/deploy-selfhost/README.md` — link quebrado, corrigido aqui |
+| "o compose aponta para `ghcr.io/deskcommcrm/deskcommcrm`" | aponta para `ghcr.io/tiagocburger/deskcommcrm`. A org `deskcommcrm` não existe (404). A string aparecia num `git clone` de `docs/deploy-selfhost/README.md` — link quebrado, corrigido aqui |
 | "não há workflow de publish" | existe desde 2026-07-02; 258 runs, 252 verdes |
 | "falta `LABEL` OCI, o package fica órfão" | premissa certa, consequência errada: o `metadata-action` injeta os labels no push, e a imagem publicada traz `image.source` correto. O package está vinculado ao repo |
 | "instalação exige 4 GB e 4–34 min de build" | o app não builda: `install.sh` faz `dc pull`. Os 4 GB são de operação. "4–34 min" não existe no repo |

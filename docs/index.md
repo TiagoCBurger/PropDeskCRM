@@ -39,10 +39,11 @@ de menor precedência e registre.
 | [`CHANGELOG.md`](../CHANGELOG.md) | Mudanças por versão (SemVer). **Quem roda VPS lê antes de `update.sh`** — mudança que exige ação manual aparece sob "⚠️ Requer atenção" |
 | [`docs/current-state.md`](current-state.md) | **O que está pronto, incompleto e quebrado hoje** |
 
-## 2. Produto e intenção
+## 2. Produto, intenção e roadmap
 
 | Doc | Conteúdo |
 |---|---|
+| [`roadmap/migracao-storage-r2.md`](roadmap/migracao-storage-r2.md) | **Plano de migração Supabase Storage → Cloudflare R2** (intenção PropDeskCRM) |
 | [`prd/00-prd-master.md`](prd/00-prd-master.md) | PRD mestre — visão, escopo MVP, KPIs, restrições |
 | [`prd/01-prd-platform-base.md`](prd/01-prd-platform-base.md) | Auth, tenancy, RBAC, framework LGPD |
 | [`prd/02-prd-customer-360.md`](prd/02-prd-customer-360.md) | Customer 360 + identity resolution determinística |

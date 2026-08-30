@@ -14,7 +14,7 @@ name: e2e
 # mesmo 127.0.0.1. Ver o comentário do passo "E2E — parte 1 de 2".
 #
 # É CHECK OBRIGATÓRIO. A régua, para reconferir em vez de acreditar nesta linha:
-#   $ gh api repos/melgarafael/DeskcommCRM/branches/main/protection \
+#   $ gh api repos/TiagoCBurger/PropDeskCRM/branches/main/protection \
 #       --jq '.required_status_checks.contexts|join(", ")'
 #   verify, build-and-size, invariants, e2e, imagens-ok   # medido em 2026-08-14
 #

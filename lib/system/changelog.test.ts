@@ -26,8 +26,8 @@ Se você usa número próprio no WhatsApp, reconecte depois de atualizar.
 
 Primeira versão marcada do DeskcommCRM.
 
-[Não lançado]: https://github.com/melgarafael/DeskcommCRM/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/melgarafael/DeskcommCRM/releases/tag/v1.0.0
+[Não lançado]: https://github.com/TiagoCBurger/PropDeskCRM/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/TiagoCBurger/PropDeskCRM/releases/tag/v1.0.0
 `;
 
 describe("extractChangelogSection", () => {

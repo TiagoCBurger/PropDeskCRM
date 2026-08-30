@@ -58,7 +58,7 @@ CRM que abre a tela de login e não deixa ninguém entrar.
 
 ```bash
 cd /var/www
-git clone https://github.com/melgarafael/DeskcommCRM.git DeskcommCRM
+git clone https://github.com/TiagoCBurger/PropDeskCRM.git DeskcommCRM
 cd /var/www/DeskcommCRM
 cp .env.hostgator.example .env
 nano .env

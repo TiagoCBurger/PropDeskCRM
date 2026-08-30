@@ -22,7 +22,7 @@ atualização — dá a ela um gatilho na tela.**
 
 ## 2. A restrição que define o desenho
 
-O app roda dentro de um container (`ghcr.io/melgarafael/deskcommcrm`) sem nenhum volume do host.
+O app roda dentro de um container (`ghcr.io/tiagocburger/deskcommcrm`) sem nenhum volume do host.
 Um container não roda `git` no host nem `docker compose up -d`. Dar a ele o socket do Docker
 resolveria — e transformaria qualquer falha de segurança no CRM em acesso root à VPS inteira.
 Descartado.
@@ -185,7 +185,7 @@ começou. Transição inválida (ex.: `success` → `failed`) é rejeitada pela 
   destacado, o que é correto para uma instalação: ela acompanha releases, não desenvolve.
   Instalação que hoje está no topo da `main` (`off_release`) é levada para a última tag no
   primeiro update — a tela explica isso antes do clique.
-- Sobe `APP_IMAGE=ghcr.io/melgarafael/deskcommcrm:<versão>` em vez de `latest`.
+- Sobe `APP_IMAGE=ghcr.io/tiagocburger/deskcommcrm:<versão>` em vez de `latest`.
 - Antes do `docker compose pull`, guarda o digest da imagem em execução
   (`docker inspect --format '{{.Image}}'`) para permitir a volta.
 

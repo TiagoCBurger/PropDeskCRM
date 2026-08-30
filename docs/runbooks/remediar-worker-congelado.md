@@ -50,7 +50,7 @@ agente ficava parado.
 
 | serviço | imagem | criada |
 |---|---|---|
-| app | `ghcr.io/melgarafael/deskcommcrm:1.2.1` (registry) | 2026-08-12 |
+| app | `ghcr.io/tiagocburger/deskcommcrm:1.2.1` (registry) | 2026-08-12 |
 | worker | `deskcommcrm-worker` (local, sem labels OCI) | **2026-07-31** |
 
 O contêiner do worker havia sido **reiniciado naquele mesmo dia** e continuava rodando a
@@ -79,7 +79,7 @@ atendeu o tempo todo; atendeu com o agente de dois meses atrás.
 Read-only, seguro em produção, não precisa de clone:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/melgarafael/DeskcommCRM/main/hostgator-setup-kit/diagnostico.sh | bash
+curl -fsSL https://raw.githubusercontent.com/TiagoCBurger/PropDeskCRM/main/hostgator-setup-kit/diagnostico.sh | bash
 ```
 
 Ou, se o operador já tem o projeto no disco:
@@ -119,7 +119,7 @@ cd /caminho/do/projeto
 docker compose -f docker-compose.prod.yml ps --format '{{.Service}}|{{.Image}}' > /root/estado-antes.txt
 # 2. aponte SÓ o worker para a imagem publicada da versão que o app já roda
 grep '^APP_IMAGE=' .env            # → confirme a versão, ex.: …deskcommcrm:1.2.1
-printf 'WORKER_IMAGE=ghcr.io/melgarafael/deskcomm-worker:<a-mesma-versão>\n' >> .env
+printf 'WORKER_IMAGE=ghcr.io/tiagocburger/deskcomm-worker:<a-mesma-versão>\n' >> .env
 printf 'WORKER_PULL_POLICY=missing\n' >> .env
 # 3. recrie apenas o worker
 docker compose -f docker-compose.prod.yml up -d --no-deps worker
@@ -181,7 +181,7 @@ worker → antes deskcomm-u6c-worker (local, 7f53521f)
 
 ```
 .env depois da 1ª execução:
-  APP_IMAGE=ghcr.io/melgarafael/deskcommcrm:1.3.0     ← pinado
+  APP_IMAGE=ghcr.io/tiagocburger/deskcommcrm:1.3.0     ← pinado
   WORKER_IMAGE                                        ← AUSENTE
 ```
 
@@ -340,13 +340,13 @@ imagem da produção, provando que foi construída ali e não reaproveitada.
 Restaurar o `.env` anterior (sem `WORKER_IMAGE`) e subir **não devolve o estado exato**.
 O compose no disco já é o novo, então o worker volta ao default `:stable`; como `stable`
 não existia, o Compose **construiu localmente e taggeou a imagem como
-`ghcr.io/melgarafael/deskcomm-worker:stable`**.
+`ghcr.io/tiagocburger/deskcomm-worker:stable`**.
 
 O resultado é uma imagem local **com nome de registry** — que parece publicada e não é:
 
 ```
 revision: []                                          ← vazio: não veio do CI
-source:   [https://github.com/melgarafael/DeskcommCRM] ← veio do LABEL do Dockerfile
+source:   [https://github.com/TiagoCBurger/PropDeskCRM] ← veio do LABEL do Dockerfile
 está no registry de verdade? NAO
 ```
 

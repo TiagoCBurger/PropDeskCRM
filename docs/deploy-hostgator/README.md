@@ -142,7 +142,7 @@ Agora escolha um dos dois caminhos:
 1. Conecte no servidor por SSH e **abra o Claude Code lá dentro** (na VPS, não no seu PC).
 2. Escreva pra ele exatamente isto:
 
-   > *"Clone https://github.com/melgarafael/DeskcommCRM e me instale o DeskcommCRM
+   > *"Clone https://github.com/TiagoCBurger/PropDeskCRM e me instale o DeskcommCRM
    > seguindo o `hostgator-setup-kit/install.sh`. Me pergunte as chaves uma por uma e
    > resolva os erros você mesmo."*
 
@@ -158,7 +158,7 @@ Agora escolha um dos dois caminhos:
 No servidor, baixe o projeto e rode o instalador:
 
 ```bash
-git clone https://github.com/melgarafael/DeskcommCRM.git
+git clone https://github.com/TiagoCBurger/PropDeskCRM.git
 cd DeskcommCRM
 bash hostgator-setup-kit/install.sh
 ```

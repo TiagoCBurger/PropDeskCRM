@@ -464,7 +464,7 @@ imagem **por número de versão**:
 
 ```
 git tag -l 'v*' --sort=-v:refname | head -1      # o alvo do update.sh
-APP_IMAGE=ghcr.io/melgarafael/deskcommcrm:1.9.1  # o que está lá hoje
+APP_IMAGE=ghcr.io/tiagocburger/deskcommcrm:1.9.1  # o que está lá hoje
 ```
 
 Então merge do #408 **não basta**. A sequência é:
