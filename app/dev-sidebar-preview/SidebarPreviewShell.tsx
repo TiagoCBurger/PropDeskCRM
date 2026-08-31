@@ -1,6 +1,7 @@
 "use client";
 
 import { Sidebar } from "@/components/shell/Sidebar";
+import { DevWhatsappQrCard } from "@/components/dev/DevWhatsappQrCard";
 import { AuthProvider } from "@/hooks/auth/AuthProvider";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
 import type { ActiveOrg, AuthUser } from "@/lib/auth/types";
@@ -99,20 +100,16 @@ function ConteudoDaTela({ tela }: { tela: TelaId }) {
 
   if (tela === "conexoes") {
     return (
-      <div className="flex flex-col items-start gap-6 rounded-2xl border bg-card p-6 shadow-sm md:flex-row">
-        <div className="flex h-48 w-48 items-center justify-center rounded-xl border-2 border-dashed bg-muted/40">
-          <p className="px-4 text-center text-sm text-muted-foreground">
-            QR do WhatsApp aparece aqui após login + WAHA
-          </p>
-        </div>
+      <div className="flex flex-col gap-6 rounded-2xl border bg-card p-6 shadow-sm lg:flex-row lg:items-start">
+        <DevWhatsappQrCard compacto />
         <div>
           <p className="font-medium">Conectar WhatsApp</p>
           <p className="mt-1 max-w-md text-sm text-muted-foreground">
-            Com WAHA rodando, escaneie o QR real em{" "}
+            O QR ao lado é real (via WAHA). Se não aparecer, use{" "}
             <a href="/dev-qr" className="text-foreground underline">
               /dev-qr
             </a>{" "}
-            ou no dashboard do WAHA na porta 3030.
+            em tela cheia ou toque em &quot;Gerar novo QR&quot;.
           </p>
         </div>
       </div>
