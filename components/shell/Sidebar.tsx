@@ -36,8 +36,8 @@ function itemClasses(collapsed: boolean, active: boolean) {
   return cn(
     "relative flex items-center transition-colors duration-fast ease-out",
     collapsed
-      ? "h-11 w-11 justify-center rounded-2xl"
-      : "gap-3 rounded-2xl px-3 py-2 text-sm font-medium",
+      ? "h-10 w-10 justify-center rounded-2xl"
+      : "gap-3 rounded-2xl px-3 py-1.5 text-sm font-medium",
     active
       ? collapsed
         ? "bg-[var(--color-spark)] text-[var(--color-spark-fg)] shadow-[0_4px_14px_var(--color-spark-tint)]"
@@ -160,7 +160,7 @@ export function SidebarContent({
 
   return (
     <>
-      <div className={cn("flex h-16 items-center px-3", collapsed ? "justify-center" : "justify-start gap-2.5")}>
+      <div className={cn("flex h-14 items-center px-3", collapsed ? "justify-center" : "justify-start gap-2.5")}>
         {collapsed ? (
           // Chip de marca do rail recolhido: o mesmo papel do glifo do design
           // (34px, canto arredondado, tinta sólida) — mas com a inicial ou o
@@ -192,7 +192,7 @@ export function SidebarContent({
         )}
       </div>
       <nav
-        className={cn("flex-1 space-y-4 overflow-y-auto", collapsed ? "px-2" : "px-3")}
+        className={cn("min-h-0 flex-1 space-y-2.5 overflow-y-auto", collapsed ? "px-2" : "px-3")}
         aria-label={t("Navegação principal")}
       >
         {grupos.map(({ group, items }) => {
@@ -249,7 +249,7 @@ export function SidebarContent({
           );
         })}
       </nav>
-      <div className={cn("space-y-0.5 pb-2 pt-3", collapsed ? "px-2" : "px-3")}>
+      <div className={cn("space-y-0.5 pb-2 pt-2", collapsed ? "px-2" : "px-3")}>
         {rodape && (
           <ul>
             <RailLink
@@ -269,7 +269,7 @@ export function SidebarContent({
             onClick={() => startTransition(() => toggleSidebar(collapsed))}
             disabled={isPending}
             className={cn(
-              "flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground",
+              "flex w-full items-center gap-2 rounded-2xl px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground",
               collapsed && "justify-center px-0",
             )}
             aria-label={collapsed ? t("Expandir sidebar") : t("Recolher sidebar")}
