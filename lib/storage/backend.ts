@@ -9,8 +9,15 @@
 
 import type { CredenciaisR2, StorageBackend } from "./types";
 
+function noServidor(): boolean {
+  // Vitest/jsdom define `window`, mas é Node: as chaves de teste vivem em
+  // `process.env`. No bundle do navegador `process.versions.node` some, e a
+  // leitura cai em `window.__PUBLIC_ENV__` (PublicEnvScript).
+  return typeof process !== "undefined" && Boolean(process.versions?.node);
+}
+
 function ler(chave: string): string {
-  if (typeof window !== "undefined") {
+  if (!noServidor() && typeof window !== "undefined") {
     const runtime = window.__PUBLIC_ENV__ as unknown as Record<string, string | undefined> | undefined;
     return (runtime?.[chave] ?? "").trim();
   }

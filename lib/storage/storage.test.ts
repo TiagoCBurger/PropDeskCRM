@@ -54,6 +54,16 @@ describe("backendDeStorage", () => {
     expect(backendDeStorage()).toBe("r2");
   });
 
+  it("em Node, process.env vence window.__PUBLIC_ENV__ (jsdom do vitest)", () => {
+    gravar();
+    const g = globalThis as unknown as { window?: { __PUBLIC_ENV__?: Record<string, string> } };
+    const orig = g.window?.__PUBLIC_ENV__;
+    if (g.window) g.window.__PUBLIC_ENV__ = { STORAGE_BACKEND: "supabase" };
+    process.env.STORAGE_BACKEND = "r2";
+    expect(backendDeStorage()).toBe("r2");
+    if (g.window) g.window.__PUBLIC_ENV__ = orig;
+  });
+
   it("chavePublicaR2: bucket físico vazio = só o path; preenchido = lógico/path", () => {
     gravar();
     delete process.env.R2_BUCKET;
