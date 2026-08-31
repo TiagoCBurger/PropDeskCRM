@@ -5,6 +5,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { importSkillPackage, installPlatformSkill } from './install';
 import type { ParsedSkillPackage } from './package';
 
+vi.mock('@/lib/storage', () => ({
+  objectStorage: vi.fn(),
+}));
+
+import { objectStorage } from '@/lib/storage';
+
 const ORG = '11111111-0000-4000-8000-000000000001';
 
 /** Mesmo padrão de mock do pool usado em org-memory.test.ts: fila de respostas em ordem de chamada. */
@@ -14,7 +20,7 @@ function poolSeq(responses: Array<{ rows?: unknown[]; rowCount?: number }>): pg.
   return { query } as unknown as pg.Pool;
 }
 
-function stubAdmin(opts?: { failPath?: string }) {
+function stubPorta(opts?: { failPath?: string }) {
   const uploaded: string[] = [];
   const upload = vi.fn(async (path: string) => {
     if (opts?.failPath === path) return { data: null, error: { message: 'boom' } };
@@ -22,8 +28,14 @@ function stubAdmin(opts?: { failPath?: string }) {
     return { data: { path }, error: null };
   });
   const remove = vi.fn(async (paths: string[]) => ({ data: paths.map((p) => ({ name: p })), error: null }));
-  const admin = { storage: { from: () => ({ upload, remove }) } } as unknown as SupabaseClient;
-  return { admin, upload, remove };
+  vi.mocked(objectStorage).mockReturnValue({
+    upload,
+    remove,
+    download: vi.fn(),
+    createSignedUrl: vi.fn(),
+    getPublicUrl: () => ({ data: { publicUrl: '' } }),
+  } as never);
+  return { upload, remove, admin: {} as unknown as SupabaseClient };
 }
 
 function makePkg(overrides: Partial<ParsedSkillPackage> = {}): ParsedSkillPackage {
@@ -53,7 +65,7 @@ describe('importSkillPackage', () => {
       }, // insertSkillVersion
       { rowCount: 1 }, // setSkillPointer
     ]);
-    const { admin, upload } = stubAdmin();
+    const { admin, upload } = stubPorta();
     const pkg = makePkg();
 
     const out = await importSkillPackage({ db: pool, admin }, { organizationId: ORG, pkg, createdBy: 'user-1' });
@@ -73,7 +85,7 @@ describe('importSkillPackage', () => {
       { rows: [{ id: 'ver-2', organization_id: ORG, name: 'x', description: 'd', body: 'b', matcher: {}, created_at: new Date() }] },
       { rowCount: 1 },
     ]);
-    const { admin } = stubAdmin();
+    const { admin } = stubPorta();
     // pkg "malicioso" com um campo organization_id estranho — install.ts não pode olhar pra ele.
     const pkg = { ...makePkg(), organizationId: 'org-evil' } as ParsedSkillPackage;
 
@@ -97,7 +109,7 @@ describe('importSkillPackage', () => {
         ],
       }, // só o insert — upload falha antes do setSkillPointer
     ]);
-    const { admin, remove } = stubAdmin({ failPath: `${ORG}/${pkg.name}/ver-3/b.md` });
+    const { admin, remove } = stubPorta({ failPath: `${ORG}/${pkg.name}/ver-3/b.md` });
 
     await expect(
       importSkillPackage({ db: pool, admin }, { organizationId: ORG, pkg, createdBy: null }),

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import {
   BUCKET_DE_LOGOS,
@@ -202,6 +202,53 @@ describe("urlPublicaDoLogo / logoDaCamada — o que a camada mostra", () => {
   it("nada configurado é `null`, e não string vazia", () => {
     expect(logoDaCamada(null, null, "https://p.co")).toBeNull();
     expect(logoDaCamada(undefined, "  ", "https://p.co")).toBeNull();
+  });
+});
+
+describe("urlPublicaDoLogo — backend R2", () => {
+  const ORIG: Record<string, string | undefined> = {};
+  const CHAVES = ["STORAGE_BACKEND", "R2_PUBLIC_BASE_URL", "R2_BUCKET"] as const;
+
+  function gravar() {
+    for (const k of CHAVES) ORIG[k] = process.env[k];
+  }
+  function restaurar() {
+    for (const k of CHAVES) {
+      if (ORIG[k] === undefined) delete process.env[k];
+      else process.env[k] = ORIG[k];
+    }
+  }
+
+  afterEach(restaurar);
+
+  it("CDN no bucket de logos (R2_BUCKET vazio) não repete o nome lógico", () => {
+    gravar();
+    process.env.STORAGE_BACKEND = "r2";
+    process.env.R2_PUBLIC_BASE_URL = "https://cdn.exemplo.test";
+    delete process.env.R2_BUCKET;
+    expect(urlPublicaDoLogo(`platform/${NOME}`, "https://p.supabase.co")).toBe(
+      `https://cdn.exemplo.test/platform/${NOME}`,
+    );
+  });
+
+  it("bucket físico único prefixa brand-logos/", () => {
+    gravar();
+    process.env.STORAGE_BACKEND = "r2";
+    process.env.R2_PUBLIC_BASE_URL = "https://cdn.exemplo.test";
+    process.env.R2_BUCKET = "unico";
+    expect(urlPublicaDoLogo(`platform/${NOME}`, "https://p.supabase.co")).toBe(
+      `https://cdn.exemplo.test/${BUCKET_DE_LOGOS}/platform/${NOME}`,
+    );
+  });
+
+  it("sem origem pública, desce para a URL colada (piso de rollback)", () => {
+    gravar();
+    process.env.STORAGE_BACKEND = "r2";
+    delete process.env.R2_PUBLIC_BASE_URL;
+    delete process.env.R2_BUCKET;
+    expect(logoDaCamada(`platform/${NOME}`, "https://cdn/antigo.png", "https://p.co")).toBe(
+      "https://cdn/antigo.png",
+    );
   });
 });
 

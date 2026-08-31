@@ -1,5 +1,6 @@
 import type { EventHandler, EventRow, HandlerResult } from "@/lib/event-log/dispatcher";
 import { marcaDaSaida } from "@/lib/branding/saida";
+import { objectStorage } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { montarPayloadDeInbound, truncar } from "./push_payload";
 import { enviarPushAoUsuario, enviarPushDaOrg } from "./web_push";
@@ -50,9 +51,10 @@ async function handleInbound(row: EventRow): Promise<HandlerResult> {
     const rotulo = rotuloDoContato(c);
     contactName = rotulo === SEM_NOME ? null : rotulo;
     if (c?.avatar_storage_path && !c.is_anonymized) {
-      const { data: signed } = await admin.storage
-        .from("whatsapp-media")
-        .createSignedUrl(c.avatar_storage_path, 300);
+      const { data: signed } = await objectStorage("whatsapp-media").createSignedUrl(
+        c.avatar_storage_path,
+        300,
+      );
       icon = signed?.signedUrl ?? null;
     }
   }

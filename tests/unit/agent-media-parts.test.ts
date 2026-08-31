@@ -2,20 +2,23 @@ import { describe, expect, it, vi } from "vitest";
 
 import { buildNativeMediaParts } from "@/lib/agent-engine/agent/media-parts";
 
-// Mock do admin storage: download() devolve um Blob com bytes (path embutido nos
-// bytes p/ o teste de recência conseguir distinguir qual mídia foi baixada).
+vi.mock("@/lib/storage", () => ({
+  objectStorage: vi.fn(),
+}));
+
+import { objectStorage } from "@/lib/storage";
+
+// download() devolve um Blob com bytes (path embutido nos bytes p/ o teste de
+// recência conseguir distinguir qual mídia foi baixada).
 function signer(ok = true) {
-  return {
-    storage: {
-      from: () => ({
-        download: vi.fn(async (path: string) =>
-          ok
-            ? { data: new Blob([new TextEncoder().encode(path)]), error: null }
-            : { data: null, error: { message: "x" } },
-        ),
-      }),
-    },
-  };
+  vi.mocked(objectStorage).mockReturnValue({
+    download: vi.fn(async (path: string) =>
+      ok
+        ? { data: new Blob([new TextEncoder().encode(path)]), error: null }
+        : { data: null, error: { message: "x" } },
+    ),
+  } as never);
+  return {};
 }
 
 const imgMsg = { direction: "inbound" as const, body: "[image]", sent_at: "t", type: "image", media_storage_path: "org/conv/m.jpg", media_mime: "image/jpeg" };

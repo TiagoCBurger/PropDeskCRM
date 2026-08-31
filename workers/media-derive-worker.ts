@@ -18,6 +18,7 @@ import { TIPOS_DERIVAVEIS } from "@/lib/messaging/media/derivable";
 import { deriveVideoText } from "@/lib/messaging/media/video-derive";
 import { apiTranscriptionProvider } from "@/lib/messaging/media/transcription";
 import { logger } from "@/lib/logger";
+import { objectStorage } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const MEDIA_DERIVE_CONSUMER_KEY = "media_derive_v1";
@@ -83,7 +84,7 @@ export async function deriveMessageMedia(row: EventRow): Promise<HandlerResult> 
   };
 
   try {
-    const dl = await admin.storage.from("whatsapp-media").download(msg.media_storage_path);
+    const dl = await objectStorage("whatsapp-media").download(msg.media_storage_path);
     if (dl.error || !dl.data) throw new Error(`storage_download_failed: ${dl.error?.message ?? "no_data"}`);
     const buffer = Buffer.from(await dl.data.arrayBuffer());
 

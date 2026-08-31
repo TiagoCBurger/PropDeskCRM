@@ -335,6 +335,32 @@ const schema = z.object({
   APP_ACCENT_HEX: z.string().optional().default(""),
 
   /**
+   * Backend de object storage. Default `supabase` — instalação existente não
+   * declara a chave e continua no Storage do projeto. `r2` liga o adapter
+   * S3-compatível (Cloudflare R2). Valor desconhecido é lido como string e a
+   * porta trata como supabase: `z.enum` aqui derrubaria o app no import do
+   * Next (healthcheck TCP, 500 em toda tela) por um typo no `.env`.
+   *
+   * R2 é fail-closed na PORTA (`lib/storage`), não neste schema: as chaves
+   * abaixo nascem opcionais para o bump não exigir edição do `.env`.
+   */
+  STORAGE_BACKEND: z.string().optional().default("supabase"),
+  R2_ACCOUNT_ID: z.string().optional().default(""),
+  R2_ACCESS_KEY_ID: z.string().optional().default(""),
+  R2_SECRET_ACCESS_KEY: z.string().optional().default(""),
+  /** Vazio = `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`. */
+  R2_ENDPOINT: z.string().optional().default(""),
+  /** Cloudflare R2 exige `auto`. */
+  R2_REGION: z.string().optional().default("auto"),
+  /**
+   * Bucket físico único. Vazio = cada bucket lógico (`whatsapp-media`, …) é
+   * um bucket S3 com o mesmo nome. Preenchido = os lógicos viram prefixo.
+   */
+  R2_BUCKET: z.string().optional().default(""),
+  /** Origem pública (logos). Não é segredo — vai para o browser via PublicEnvScript. */
+  R2_PUBLIC_BASE_URL: z.string().optional().default(""),
+
+  /**
    * Par VAPID do Web Push. Opcionais: sem elas a bandeja só funciona com a aba
    * viva (Notification API + SW local). Gerar: `npx web-push generate-vapid-keys`.
    */

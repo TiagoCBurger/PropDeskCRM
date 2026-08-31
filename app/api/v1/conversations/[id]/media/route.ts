@@ -12,7 +12,7 @@ import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { extFromMime, MAX_MEDIA_BYTES } from "@/lib/messaging/media/types";
 import { validateOutboundMedia } from "@/lib/messaging/media/upload-validation";
 import { transcodificarNotaDeVoz } from "@/lib/messaging/media/voice-transcode";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { objectStorage } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -82,10 +82,10 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const buffer = audio.buffer;
 
   const storagePath = `${activeOrg.orgId}/${conversationId}/out-${randomUUID()}.${extFromMime(mimeFinal)}`;
-  const admin = createAdminClient();
-  const { error: upErr } = await admin.storage
-    .from("whatsapp-media")
-    .upload(storagePath, buffer, { contentType: mimeFinal, upsert: false });
+  const { error: upErr } = await objectStorage("whatsapp-media").upload(storagePath, buffer, {
+    contentType: mimeFinal,
+    upsert: false,
+  });
   if (upErr) {
     console.error("[conversations.media] upload failed", upErr.message);
     return fail("internal_error", "Erro ao subir o arquivo.", 500, { requestId });

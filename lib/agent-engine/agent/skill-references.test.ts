@@ -2,6 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { readSkillReference, skillHasReferences } from './skill-references';
 import type { LoadedSkill } from './skills';
 
+vi.mock('@/lib/storage', () => ({
+  objectStorage: vi.fn(),
+}));
+
+import { objectStorage } from '@/lib/storage';
+
 function skill(overrides: Partial<LoadedSkill> = {}): LoadedSkill {
   return {
     versionId: 'ver-1',
@@ -69,13 +75,13 @@ describe('readSkillReference', () => {
 
   it('baixa do storage no path {org}/{skill}/{versionId}/{path} e devolve o texto', async () => {
     const download = vi.fn().mockResolvedValue({ data: new Blob(['conteúdo da reference']), error: null });
-    const from = vi.fn().mockReturnValue({ download });
-    const admin = { storage: { from } } as never;
+    vi.mocked(objectStorage).mockReturnValue({ download } as never);
+    const admin = { storage: { from: vi.fn() } } as never;
     const res = await readSkillReference(
       { admin },
       { organizationId: 'org1', matchedSkills: [skill()], skillName: 'frete-atrasado', refPath: 'refs/politica.md' },
     );
-    expect(from).toHaveBeenCalledWith('skill-assets');
+    expect(objectStorage).toHaveBeenCalledWith('skill-assets');
     expect(download).toHaveBeenCalledWith('org1/frete-atrasado/ver-1/refs/politica.md');
     expect(res).toEqual({
       ok: true,
@@ -87,8 +93,8 @@ describe('readSkillReference', () => {
 
   it('reference_download_failed quando o storage devolve erro (arquivo órfão/indisponível)', async () => {
     const download = vi.fn().mockResolvedValue({ data: null, error: { message: 'not found' } });
-    const from = vi.fn().mockReturnValue({ download });
-    const admin = { storage: { from } } as never;
+    vi.mocked(objectStorage).mockReturnValue({ download } as never);
+    const admin = { storage: { from: vi.fn() } } as never;
     const res = await readSkillReference(
       { admin },
       { organizationId: 'org1', matchedSkills: [skill()], skillName: 'frete-atrasado', refPath: 'refs/politica.md' },

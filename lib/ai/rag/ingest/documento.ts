@@ -18,7 +18,7 @@
  * de cliente é péssimo negócio.
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { objectStorage } from "@/lib/storage";
 import { extractMarkdownText } from "@/lib/ai/rag/extractors/markdown";
 import { extractPdfText, PdfExtractError } from "@/lib/ai/rag/extractors/pdf";
 
@@ -72,8 +72,7 @@ export async function extrairTextoDoArquivo(
     );
   }
 
-  const admin = createAdminClient();
-  const { data: blob, error } = await admin.storage.from(BUCKET_DE_CONHECIMENTO).download(blobPath);
+  const { data: blob, error } = await objectStorage(BUCKET_DE_CONHECIMENTO).download(blobPath);
 
   if (error || !blob) {
     throw new ErroDeExtracao(

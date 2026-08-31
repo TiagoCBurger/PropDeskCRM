@@ -18,6 +18,7 @@ import type { NextRequest } from "next/server";
 
 import { fail } from "@/lib/api/wrappers";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
+import { objectStorage } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -74,9 +75,10 @@ export async function GET(
     return new Response(null, { status: 404 });
   }
 
-  const { data: signed, error } = await admin.storage
-    .from("whatsapp-media")
-    .createSignedUrl(row.avatar_storage_path, SIGNED_TTL_SECONDS);
+  const { data: signed, error } = await objectStorage("whatsapp-media").createSignedUrl(
+    row.avatar_storage_path,
+    SIGNED_TTL_SECONDS,
+  );
 
   if (error || !signed?.signedUrl) {
     return new Response(null, { status: 404 });

@@ -8,6 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { LeadContextMessage } from "@/lib/agent-engine/edge/crm/get-lead-context";
 import { modelCapabilities } from "@/lib/agent-engine/edge/llm/capabilities";
+import { objectStorage } from "@/lib/storage";
 
 
 /**
@@ -57,7 +58,7 @@ export async function buildNativeMediaParts(args: BuildNativeMediaPartsArgs): Pr
         const isPdf = m.type === "document" && mime === "application/pdf" && caps.pdf;
         if (!isImage && !isPdf) continue;
 
-        const dl = await args.admin.storage.from("whatsapp-media").download(m.media_storage_path!);
+        const dl = await objectStorage("whatsapp-media").download(m.media_storage_path!);
         if (dl.error || !dl.data) continue;
         // Buffer do Node (não Uint8Array cru) — mesmo shape que o derive worker usa
         // com sucesso; alguns adapters do AI SDK tratam Buffer e Uint8Array diferente.
