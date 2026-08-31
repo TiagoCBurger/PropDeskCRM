@@ -26,7 +26,7 @@ O deploy canônico (dois `-f`, `update.sh`, não construir na VPS) continua em
 | Atualização na VPS | `hostgator-setup-kit/update.sh` | Puxa a **tag** publicada, backup, baseline, `dc pull` + `dc up -d`. Não constrói na VPS no caminho normal. |
 | Supabase (URL/keys) | `lib/env.ts`, `.env.example` | `NEXT_PUBLIC_SUPABASE_URL`, anon key, service role, `SUPABASE_DB_URL`. O app **já** aponta para um projeto remoto — Cloud ou self-host é o valor, não o código. |
 | Object storage pluggable | `lib/storage/` | `STORAGE_BACKEND=supabase` (default) ou `r2`. Call sites passam por `objectStorage(bucket)`. |
-| Deploy opt-in | job `deploy-vps` em `publish-image.yml` | Sem `VPS_HOST` / `VPS_USER` / `VPS_SSH_KEY`, **sai verde** e grava o resumo. Com secrets: SSH e `update.sh`. |
+| Deploy opt-in | job `deploy-vps` em `publish-image.yml` | Sem `VPS_HOST` / `VPS_USER` / `VPS_SSH_KEY`, **sai verde** e grava o resumo. Com os três: exige também `VPS_SSH_KNOWN_HOSTS` (sem TOFU) e SSH + `update.sh`. |
 
 `latest` no GHCR = topo da `main`, não a última release. Quem opera cliente usa o **número** da tag. `stable` = última release. CONFIRMADO em `publish-image.yml` e `docs/doctrine/packaging.md`.
 
@@ -95,7 +95,7 @@ O CI de **teste** já roda em todo PR para `main` (`ci.yml` `on.pull_request`, `
 | `VPS_USER` | idem | sim |
 | `VPS_SSH_KEY` | idem (chave **privada**, PEM) | sim |
 | `VPS_PORT` | secret, default 22 | não |
-| `VPS_SSH_KNOWN_HOSTS` | secret | recomendado. Sem ele o job faz `ssh-keyscan` (TOFU na primeira vez) |
+| `VPS_SSH_KNOWN_HOSTS` | secret | **obrigatório quando o deploy está ligado**. Sem ele o job falha fechado. Não há `ssh-keyscan` no runner (TOFU/MITM no primeiro deploy). Como obter: numa máquina que **já** confia no host, `ssh-keyscan -p <porta> <host>`. Sem os três secrets de SSH, o job **não** pede este — continua skip verde. |
 | `VPS_PROJECT_DIR` | **variable** do repo, default `/var/www/crm` | não |
 | `VPS_DEPLOY_MODE` | variable, default `update-sh` | não. `compose-pull` puxa `:latest` / o que o `.env` da VPS aponta — só para quem **escolheu** acompanhar a `main`. `update.sh` instala a maior tag `v*` (CONFIRMADO no script) |
 
@@ -105,7 +105,7 @@ Sem os três primeiros, o job escreve no summary “VPS não configurada” e **
 
 **Não** coloque o job `deploy-vps` na branch protection até a VPS existir. `imagens-ok` continua sendo o gate de imagem.
 
-**Protocolo remoto (CONFIRMADO no YAML):** `bash hostgator-setup-kit/update.sh` no diretório do projeto. `compose-pull` só se `VPS_DEPLOY_MODE=compose-pull`; se `.env` tem `REVERSE_PROXY=traefik`, usa os dois `-f`; senão só `docker-compose.prod.yml` (o mesmo critério de `dc()` em `hostgator-setup-kit/_common.sh`).
+**Protocolo remoto (CONFIRMADO no YAML):** `bash hostgator-setup-kit/update.sh` no diretório do projeto. `compose-pull` só se `VPS_DEPLOY_MODE=compose-pull`; se `.env` tem `REVERSE_PROXY=traefik` — com ou sem aspas (`REVERSE_PROXY="traefik"` é o que o `install.sh` grava via `envq`) — usa os dois `-f`; senão só `docker-compose.prod.yml` (o mesmo critério de `dc()` em `hostgator-setup-kit/_common.sh`). Default do job continua `update-sh`.
 
 Chave SSH: `IdentitiesOnly=yes`, `StrictHostKeyChecking=yes`, `BatchMode=yes`. Sem `set -x`. A chave é apagada no runner ao fim.
 
@@ -113,7 +113,7 @@ Chave SSH: `IdentitiesOnly=yes`, `StrictHostKeyChecking=yes`, `BatchMode=yes`. S
 
 1. Alugar a VPS, instalar com `hostgator-setup-kit/install.sh` (ou apontar o `.env` para Supabase Cloud).
 2. Criar um usuário SSH de deploy (não root, se a política da VPS permitir) com a **chave pública** em `authorized_keys`.
-3. No GitHub: Settings → Environments → `production` → secrets acima. Variable `VPS_PROJECT_DIR` se o path não for `/var/www/crm`.
+3. No GitHub: Settings → Environments → `production` → secrets acima, **incluindo `VPS_SSH_KNOWN_HOSTS`**. Variable `VPS_PROJECT_DIR` se o path não for `/var/www/crm`.
 4. Merge na `main` (ou tag `v*`) → `imagens-ok` → `deploy-vps` SSH.
 5. Conferir o domínio: 307 para o login, não 404 (`deploy.md` §2).
 
@@ -150,6 +150,7 @@ Quem já instalou e **não** ligou o job continua atualizando pela tela (`agent.
 - API key / token **nunca** em query string.
 - Service role continua filtrando `organization_id` de fonte confiável, não do body.
 - Job de deploy não roda em fork nem em `pull_request`.
+- Fingerprint SSH do deploy vem de `VPS_SSH_KNOWN_HOSTS`, nunca de `ssh-keyscan` no runner.
 - Não logar `R2_SECRET_ACCESS_KEY`, `VPS_SSH_KEY`, service role, CPF, telefone, e-mail.
 
 ---

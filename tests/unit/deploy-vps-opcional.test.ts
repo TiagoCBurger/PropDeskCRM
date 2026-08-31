@@ -7,7 +7,9 @@
  * regex que parou de casar não pode ficar verde vigiando nada — o job()
  * vazio reprova no primeiro caso.
  */
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -66,5 +68,60 @@ describe("deploy-vps é opt-in e não quebra o pipeline sem VPS", () => {
     expect(semComentario).not.toMatch(/set\s+-x/);
     expect(semComentario).not.toMatch(/echo\s+\$\{?VPS_SSH_KEY/);
     expect(semComentario).not.toMatch(/StrictHostKeyChecking=no/);
+  });
+
+  it("deploy ligado exige VPS_SSH_KNOWN_HOSTS e não usa ssh-keyscan como confiança", () => {
+    const semComentario = t
+      .split("\n")
+      .filter((l) => !l.trimStart().startsWith("#"))
+      .join("\n");
+    // Fonte de confiança = o secret, nunca o que responder no primeiro SSH.
+    expect(semComentario).not.toMatch(/ssh-keyscan/);
+    expect(t).toContain("VPS_SSH_KNOWN_HOSTS");
+    expect(t).toMatch(/-z "\$\{VPS_SSH_KNOWN_HOSTS\}"/);
+
+    // O skip verde (VPS ainda não alugada) NÃO consulta known_hosts.
+    const passoCfg = t.slice(0, t.indexOf("Instalar chave SSH"));
+    expect(passoCfg).toMatch(/skip=true/);
+    expect(passoCfg).not.toContain("VPS_SSH_KNOWN_HOSTS");
+    expect(passoCfg).toContain("VPS_HOST");
+    expect(passoCfg).toContain("VPS_USER");
+    expect(passoCfg).toContain("VPS_SSH_KEY");
+  });
+
+  it("compose-pull detecta Traefik com aspas — o que o install.sh grava via envq", () => {
+    const grepLinha = t.split("\n").find((l) => /grep -qE /.test(l) && l.includes("REVERSE_PROXY"));
+    expect(grepLinha, "faltou grep -qE de REVERSE_PROXY no script remoto").toBeTruthy();
+    // Não é o grep ingênuo que só casa valor sem aspas.
+    expect(t).not.toMatch(/grep -q '\^REVERSE_PROXY=traefik'/);
+
+    const grepCmd = grepLinha!.trim().replace(/^if\s+/, "").replace(/;\s*then\s*$/, "");
+    expect(grepCmd).toMatch(/^grep -qE /);
+
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "rp-traefik-"));
+    const envPath = path.join(tmp, ".env");
+
+    const casa = (conteudo: string): boolean => {
+      fs.writeFileSync(envPath, conteudo.endsWith("\n") ? conteudo : `${conteudo}\n`);
+      try {
+        execFileSync("bash", ["-c", grepCmd], { cwd: tmp, stdio: "pipe" });
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    expect(casa('REVERSE_PROXY=traefik'), "sem aspas").toBe(true);
+    expect(casa('REVERSE_PROXY="traefik"'), "aspas duplas (envq)").toBe(true);
+    expect(casa("REVERSE_PROXY='traefik'"), "aspas simples").toBe(true);
+    expect(
+      casa("DOMAIN=exemplo.com\nREVERSE_PROXY=\"traefik\"\nTRAEFIK_NETWORK=proxy\n"),
+      ".env real com outras chaves",
+    ).toBe(true);
+
+    expect(casa('REVERSE_PROXY=caddy'), "caddy sem aspas").toBe(false);
+    expect(casa('REVERSE_PROXY="caddy"'), "caddy com aspas").toBe(false);
+    expect(casa("# REVERSE_PROXY=traefik"), "comentado").toBe(false);
+    expect(casa("REVERSE_PROXY=traefikx"), "valor prefixo").toBe(false);
   });
 });
