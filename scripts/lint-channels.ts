@@ -181,6 +181,21 @@ const KNOWN_DEBT: { reason: string; files: string[] }[] = [
       "workers/ai-response-worker.ts",
     ],
   },
+  {
+    reason:
+      "Rotas de PREVIEW dev (`/dev-qr`, `/dev-sidebar-preview`) que falam com o " +
+      "transporte WAHA local para demonstrar QR durante design review. Não embarcam " +
+      "em produção; saem quando o preview dev for removido ou quando a Fase 3 " +
+      "absorver `lib/waha/`.",
+    files: [
+      "app/api/dev/whatsapp-qr/route.ts",
+      "app/api/dev/whatsapp-restart/route.ts",
+      "app/api/dev/whatsapp-status/route.ts",
+      "app/dev-qr/page.tsx",
+      "app/dev-sidebar-preview/SidebarPreviewShell.tsx",
+      "components/dev/DevWhatsappQrCard.tsx",
+    ],
+  },
 ];
 
 const DEBT = new Set(KNOWN_DEBT.flatMap((g) => g.files));

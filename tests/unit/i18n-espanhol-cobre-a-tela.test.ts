@@ -68,6 +68,9 @@ const PASTAS_IGNORADAS = new Set(["api", "node_modules"]);
 const FORA_DO_PRODUTO: Record<string, string> = {
   "app/design": "vitrine do design system: rota noindex, sem porta na navegação",
   "app/vitrine-agenda": "vitrine do kit visual da Agenda: dado de mentira, noindex",
+  "app/dev-qr": "preview dev de QR WhatsApp: rota pública só para design review, sem porta na navegação",
+  "app/dev-sidebar-preview": "preview dev multi-tela VibeFly: rota pública só para design review, sem porta na navegação",
+  "components/dev": "componentes usados só pelas rotas de preview dev acima; não alcançam quem usa o produto",
 };
 
 /**
