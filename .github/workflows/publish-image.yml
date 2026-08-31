@@ -307,3 +307,111 @@ jobs:
           echo "imagem-do-app-sobe: ${{ needs.imagem-do-app-sobe.result }}"
           [ "${{ needs.build-and-push.result }}" = "success" ]
           [ "${{ needs.imagem-do-app-sobe.result }}" = "success" ]
+
+  # Deploy na VPS: OPT-IN. Sem os três secrets (VPS_HOST / VPS_USER /
+  # VPS_SSH_KEY), o job SAI VERDE — a VPS ainda não foi alugada, e este job
+  # NÃO é status check obrigatório (imagens-ok continua sendo o gate de
+  # publicação). Com os três presentes, VPS_SSH_KNOWN_HOSTS também é
+  # obrigatório: o runner NÃO faz ssh-keyscan (TOFU no primeiro deploy).
+  # O protocolo canônico é o que já existe: update.sh.
+  # Runbook: docs/runbooks/topologia-vps-supabase-cloud-r2.md
+  deploy-vps:
+    needs: [imagens-ok]
+    if: >
+      always() &&
+      needs.imagens-ok.result == 'success' &&
+      github.event_name == 'push' &&
+      github.event.repository.fork == false &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - name: A VPS está configurada?
+        id: cfg
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VPS_HOST}" ] || [ -z "${VPS_USER}" ] || [ -z "${VPS_SSH_KEY}" ]; then
+            {
+              echo "## Deploy VPS — pulado"
+              echo
+              echo "Secrets VPS_HOST, VPS_USER e VPS_SSH_KEY ausentes."
+              echo "A VPS ainda não está ligada. Nada foi implantado."
+              echo "Runbook: docs/runbooks/topologia-vps-supabase-cloud-r2.md"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "VPS não configurada — job sai verde."
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Instalar chave SSH e known_hosts
+        if: steps.cfg.outputs.skip != 'true'
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          # printf, nunca echo: a chave pode começar com '-' .
+          printf '%s\n' "$VPS_SSH_KEY" | tr -d '\r' > "$HOME/.ssh/id_deploy"
+          chmod 600 "$HOME/.ssh/id_deploy"
+          # Fail-closed: com o deploy ligado o fingerprint tem de vir do secret.
+          # ssh-keyscan no runner confiaria em quem respondesse (TOFU/MITM).
+          # Sem os três secrets de SSH este passo nem roda (skip verde).
+          if [ -z "${VPS_SSH_KNOWN_HOSTS}" ]; then
+            echo "::error::VPS_SSH_KNOWN_HOSTS é obrigatório quando o deploy está ligado. O job não consulta a chave do host na hora. Runbook: docs/runbooks/topologia-vps-supabase-cloud-r2.md"
+            exit 1
+          fi
+          printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Atualizar a VPS (update.sh, ou compose-pull se pedido)
+        if: steps.cfg.outputs.skip != 'true'
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_PROJECT_DIR: ${{ vars.VPS_PROJECT_DIR }}
+          VPS_DEPLOY_MODE: ${{ vars.VPS_DEPLOY_MODE }}
+        run: |
+          set -euo pipefail
+          PORT="${VPS_PORT:-22}"
+          DIR="${VPS_PROJECT_DIR:-/var/www/crm}"
+          MODE="${VPS_DEPLOY_MODE:-update-sh}"
+          ssh -i "$HOME/.ssh/id_deploy" \
+            -p "$PORT" \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            "${VPS_USER}@${VPS_HOST}" \
+            env "VPS_PROJECT_DIR=${DIR}" "VPS_DEPLOY_MODE=${MODE}" \
+            bash -s <<'REMOTE'
+          set -euo pipefail
+          cd "$VPS_PROJECT_DIR"
+          if [ "${VPS_DEPLOY_MODE}" = "compose-pull" ]; then
+            # install.sh grava via envq: REVERSE_PROXY="traefik" (com aspas).
+            # grep sem aspas opcionais não casa → up -d só com prod.yml,
+            # labels do Traefik somem, domínio 404 com o container healthy.
+            if grep -qE '^REVERSE_PROXY=["'\'']?traefik["'\'']?$' .env 2>/dev/null; then
+              docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml --env-file .env pull
+              docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml --env-file .env up -d
+            else
+              docker compose -f docker-compose.prod.yml --env-file .env pull
+              docker compose -f docker-compose.prod.yml --env-file .env up -d
+            fi
+          else
+            bash hostgator-setup-kit/update.sh
+          fi
+          REMOTE
+
+      - name: Apagar a chave do runner
+        if: always() && steps.cfg.outputs.skip != 'true'
+        run: rm -f "$HOME/.ssh/id_deploy"

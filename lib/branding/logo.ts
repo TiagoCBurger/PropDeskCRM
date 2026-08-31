@@ -46,6 +46,8 @@
  * para um logo e barato para a primeira pintura da tela de login.
  */
 
+import { backendDeStorage, basePublicaR2, chavePublicaR2 } from "@/lib/storage/backend";
+
 /** O bucket. Nome sem a marca do produto de propósito — ver `tests/unit/branding.test.ts`. */
 export const BUCKET_DE_LOGOS = "brand-logos";
 
@@ -110,14 +112,24 @@ export function caminhoNovoDoLogo(prefixo: string, extensao: ExtensaoDeLogo): st
 }
 
 /**
- * A URL pública de um caminho. PURA: recebe a base, não a procura.
+ * A URL pública de um caminho. PURA no default supabase: recebe a base, não
+ * a procura. Com R2, a origem pública vem de `R2_PUBLIC_BASE_URL`; sem ela
+ * devolve vazio e `logoDaCamada` cai na URL colada (`APP_LOGO_URL`).
  *
  * Base sem barra no fim e caminho sem barra no começo — as duas normalizações
  * aqui, e não em cada chamador, porque `NEXT_PUBLIC_SUPABASE_URL` com barra final
  * é grafia legítima que o operador escreve no `.env` e produziria `//storage`.
  */
 export function urlPublicaDoLogo(caminho: string, base: string): string {
-  return `${base.replace(/\/+$/, "")}/storage/v1/object/public/${BUCKET_DE_LOGOS}/${caminho.replace(/^\/+/, "")}`;
+  const pathLimpo = caminho.replace(/^\/+/, "");
+  if (backendDeStorage() === "r2") {
+    const cdn = basePublicaR2();
+    if (!cdn) return "";
+    // Mesma chave que a porta: CDN no bucket de logos (R2_BUCKET vazio) não
+    // repete o nome lógico; um bucket físico único prefixa `brand-logos/`.
+    return `${cdn}/${chavePublicaR2(BUCKET_DE_LOGOS, pathLimpo)}`;
+  }
+  return `${base.replace(/\/+$/, "")}/storage/v1/object/public/${BUCKET_DE_LOGOS}/${pathLimpo}`;
 }
 
 /**
@@ -194,7 +206,10 @@ export function logoDaCamada(
   base: string = baseDoStorage(),
 ): string | null {
   const limpo = (caminho ?? "").trim();
-  if (limpo.length > 0 && base.length > 0) return urlPublicaDoLogo(limpo, base);
+  if (limpo.length > 0 && base.length > 0) {
+    const publica = urlPublicaDoLogo(limpo, base);
+    if (publica.length > 0) return publica;
+  }
   const colada = (url ?? "").trim();
   return colada.length > 0 ? colada : null;
 }

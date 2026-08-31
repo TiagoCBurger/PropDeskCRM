@@ -13,6 +13,8 @@ import type pg from 'pg';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { insertSkillVersion, setSkillPointer, type SkillMatcher } from '../../agent-engine/agent/skills';
+import { logger } from "@/lib/logger";
+import { objectStorage } from "@/lib/storage";
 import type { ParsedSkillPackage } from './package';
 
 const SKILL_ASSETS_BUCKET = 'skill-assets';
@@ -42,16 +44,19 @@ export async function importSkillPackage(
   const uploaded: string[] = [];
   for (const f of pkg.files) {
     const objectPath = `${organizationId}/${pkg.name}/${version.id}/${f.path}`;
-    const { error } = await deps.admin.storage
-      .from(SKILL_ASSETS_BUCKET)
-      .upload(objectPath, Buffer.from(f.bytes), { upsert: false });
+    const { error } = await objectStorage(SKILL_ASSETS_BUCKET).upload(
+      objectPath,
+      Buffer.from(f.bytes),
+      { upsert: false },
+    );
     if (error) {
       if (uploaded.length > 0) {
-        await deps.admin.storage.from(SKILL_ASSETS_BUCKET).remove(uploaded);
+        await objectStorage(SKILL_ASSETS_BUCKET).remove(uploaded);
       }
-      console.error(
-        `[install-skill] upload falhou (${objectPath}): ${error.message} — versão órfã ${version.id} fica no banco, ponteiro não move`,
-      );
+      logger.error("[install-skill] upload falhou — versão órfã fica no banco, ponteiro não move", {
+        path: objectPath,
+        versionId: version.id,
+      });
       throw new Error(`falha ao subir arquivo do pacote de skill: ${f.path}`);
     }
     uploaded.push(objectPath);

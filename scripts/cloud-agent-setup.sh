@@ -62,6 +62,9 @@ LGPD_SIGNING_KEY=$(gen_hex 24)
 # --- App URLs ----------------------------------------------------------------
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
+
+# --- Object storage (default supabase; R2 = Secrets do painel, nunca aqui) --
+STORAGE_BACKEND=supabase
 EOF
 
   echo "[cloud-agent-setup] .env.local criado."

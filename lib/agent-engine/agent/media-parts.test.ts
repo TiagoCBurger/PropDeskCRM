@@ -3,6 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import { buildNativeMediaParts } from "./media-parts";
 import type { LeadContextMessage } from "@/lib/agent-engine/edge/crm/get-lead-context";
 
+vi.mock("@/lib/storage", () => ({
+  objectStorage: vi.fn(),
+}));
+
+import { objectStorage } from "@/lib/storage";
+
 /**
  * Regressão da VISÃO NATIVA (Onda 3 / re-verificado 2026-07-23): prova que a
  * parte nativa É montada no formato que o AI SDK v7 entrega ao modelo
@@ -12,19 +18,21 @@ import type { LeadContextMessage } from "@/lib/agent-engine/edge/crm/get-lead-co
  * trava o wiring pra o mito não voltar.
  */
 
-// admin.storage.from(bucket).download(path) → { data: Blob, error: null }
-function fakeAdmin(bytes: Buffer, opts: { fail?: boolean } = {}) {
-  return {
-    storage: {
-      from: () => ({
-        download: vi.fn(async () =>
-          opts.fail
-            ? { data: null, error: new Error("boom") }
-            : { data: { arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) }, error: null },
-        ),
-      }),
-    },
-  } as never;
+function fakePorta(bytes: Buffer, opts: { fail?: boolean } = {}) {
+  vi.mocked(objectStorage).mockReturnValue({
+    download: vi.fn(async () =>
+      opts.fail
+        ? { data: null, error: new Error("boom") }
+        : {
+            data: {
+              arrayBuffer: async () =>
+                bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+            },
+            error: null,
+          },
+    ),
+  } as never);
+  return {} as never;
 }
 
 const imageInbound: LeadContextMessage = {
@@ -44,7 +52,7 @@ describe("buildNativeMediaParts — regressão da visão nativa", () => {
       provider: "openai",
       model: "gpt-4o",
       multimodalInput: true,
-      admin: fakeAdmin(bytes),
+      admin: fakePorta(bytes),
     });
     expect(parts).toHaveLength(1);
     expect(parts[0]!.type).toBe("file");
@@ -59,7 +67,7 @@ describe("buildNativeMediaParts — regressão da visão nativa", () => {
       provider: "openai",
       model: "gpt-4o",
       multimodalInput: false,
-      admin: fakeAdmin(Buffer.from([1])),
+      admin: fakePorta(Buffer.from([1])),
     });
     expect(parts).toEqual([]);
   });
@@ -70,7 +78,7 @@ describe("buildNativeMediaParts — regressão da visão nativa", () => {
       provider: "desconhecido",
       model: "modelo-x",
       multimodalInput: true,
-      admin: fakeAdmin(Buffer.from([1])),
+      admin: fakePorta(Buffer.from([1])),
     });
     expect(parts).toEqual([]);
   });
@@ -81,7 +89,7 @@ describe("buildNativeMediaParts — regressão da visão nativa", () => {
       provider: "openai",
       model: "gpt-4o",
       multimodalInput: true,
-      admin: fakeAdmin(Buffer.from([1])),
+      admin: fakePorta(Buffer.from([1])),
     });
     expect(parts).toEqual([]);
   });
@@ -92,7 +100,7 @@ describe("buildNativeMediaParts — regressão da visão nativa", () => {
       provider: "openai",
       model: "gpt-4o",
       multimodalInput: true,
-      admin: fakeAdmin(Buffer.from([1]), { fail: true }),
+      admin: fakePorta(Buffer.from([1]), { fail: true }),
     });
     expect(parts).toEqual([]);
   });

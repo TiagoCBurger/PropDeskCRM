@@ -37,6 +37,7 @@ import {
   hashEmail,
   sendExportEmail,
 } from "@/lib/lgpd/email-delivery";
+import { objectStorage } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { marcaDaSaida } from "@/lib/branding/saida";
 
@@ -162,9 +163,7 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
 
     const jsonBytes = Buffer.from(JSON.stringify(data, null, 2), "utf-8");
 
-    const { error: jsonUploadErr } = await admin.storage
-      .from(BUCKET)
-      .upload(jsonPath, jsonBytes, {
+    const { error: jsonUploadErr } = await objectStorage(BUCKET).upload(jsonPath, jsonBytes, {
         contentType: "application/json",
         upsert: true,
       });
@@ -172,9 +171,7 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
       throw new Error(`json_upload_failed: ${jsonUploadErr.message}`);
     }
 
-    const { error: pdfUploadErr } = await admin.storage
-      .from(BUCKET)
-      .upload(pdfPath, signResult.signed, {
+    const { error: pdfUploadErr } = await objectStorage(BUCKET).upload(pdfPath, signResult.signed, {
         contentType: "application/pdf",
         upsert: true,
       });
@@ -186,9 +183,10 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
     const expiresInSec = expiresHours() * 60 * 60;
     const expiresAt = new Date(Date.now() + expiresInSec * 1000);
 
-    const { data: signed, error: signedErr } = await admin.storage
-      .from(BUCKET)
-      .createSignedUrl(pdfPath, expiresInSec);
+    const { data: signed, error: signedErr } = await objectStorage(BUCKET).createSignedUrl(
+      pdfPath,
+      expiresInSec,
+    );
     if (signedErr || !signed) {
       throw new Error(`signed_url_failed: ${signedErr?.message ?? "no_url"}`);
     }

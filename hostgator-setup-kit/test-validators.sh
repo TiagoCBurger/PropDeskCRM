@@ -1704,8 +1704,25 @@ echo "packaging: a tag do git não basta — as imagens têm de existir"
 #
 # 403 é o caso que trava na estreia de uma imagem nova: pacote recém-criado no
 # GHCR nasce privado, e repositório público não muda isso.
+#
+# Remoto LOCAL com tags, como o caso de cima: sem isso, `ultima_versao_publicada`
+# cai no GitHub real. Num fork sem tags `v*` (este) ela devolve vazio, o
+# install vai para o canal `latest` e a asserção do aviso de build nunca
+# executa — verde/vermelho pelo ambiente, não pelo código.
 TMP_PRIV="$(mktemp -d)"
 (
+  origem="$TMP_PRIV/origem.git"
+  git init --quiet --bare "$origem"
+  (
+    cd "$TMP_PRIV" || exit 1
+    git clone --quiet "$origem" w 2>/dev/null
+    cd w || exit 1
+    git config user.email t@t; git config user.name t
+    echo x > a; git add -A; git commit --quiet -m init
+    git tag v1.10.0
+    git push --quiet origin HEAD --tags 2>/dev/null
+  )
+
   montar_vps "$TMP_PRIV/vps" "crmpriv" <<'STUB'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$DOCKER_LOG"
@@ -1714,9 +1731,10 @@ case "$1" in
 esac
 exit 0
 STUB
+  export REPO_URL="$origem"
   export DUBLE_GHCR=403          # pacote existe mas está PRIVADO
   saida="$(rodar install.sh --yes)"
-  unset DUBLE_GHCR
+  unset DUBLE_GHCR REPO_URL
 
   if ! printf '%s' "$saida" | grep -q "construídas neste servidor"; then
     printf '  ✗ com as imagens inalcançáveis, o instalador não avisou que ia construir aqui\n'

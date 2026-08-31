@@ -72,6 +72,7 @@ import {
 import { extensaoDe, farejarTipo, pareceSvg, podeApagar } from "@/lib/branding/logo-arquivo";
 import { marcaDaOrganizacaoDeSettings } from "@/lib/branding/organizacao";
 import { logger } from "@/lib/logger";
+import { objectStorage } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -302,7 +303,7 @@ async function apagarAnterior(ctx: Contexto, anterior: string | null): Promise<v
     });
     return;
   }
-  const { error } = await createAdminClient().storage.from(BUCKET_DE_LOGOS).remove([anterior]);
+  const { error } = await objectStorage(BUCKET_DE_LOGOS).remove([anterior]);
   if (error) {
     logger.warn("[marca/logo] arquivo anterior ficou órfão", {
       detalhe: error.message,
@@ -419,9 +420,10 @@ export async function POST(req: NextRequest): Promise<Response> {
   const anterior = await caminhoGravado(ctx);
   const caminho = caminhoNovoDoLogo(ctx.prefixo, extensaoDe(tipo));
 
-  const { error: erroUp } = await createAdminClient()
-    .storage.from(BUCKET_DE_LOGOS)
-    .upload(caminho, bytes, { contentType: tipo, upsert: false });
+  const { error: erroUp } = await objectStorage(BUCKET_DE_LOGOS).upload(caminho, bytes, {
+    contentType: tipo,
+    upsert: false,
+  });
   if (erroUp) {
     logger.error("[marca/logo] upload falhou", { detalhe: erroUp.message, requestId });
     return fail("internal_error", "Erro ao subir o logo.", 500, { requestId });
@@ -432,7 +434,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     // A gravação falhou DEPOIS do upload: o arquivo novo é que vira órfão, não o
     // antigo. Tentar apagá-lo aqui seria o caminho certo e não é obrigatório —
     // por isso é `void`, sem `await` no caminho de erro.
-    void createAdminClient().storage.from(BUCKET_DE_LOGOS).remove([caminho]);
+    void objectStorage(BUCKET_DE_LOGOS).remove([caminho]);
     return fail(recusa.codigo, recusa.mensagem, recusa.status, { requestId });
   }
 

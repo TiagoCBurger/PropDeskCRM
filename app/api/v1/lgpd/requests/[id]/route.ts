@@ -12,6 +12,7 @@ import type { NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
+import { objectStorage } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -77,9 +78,10 @@ export async function GET(
     const pdfPath = typeof result.pdf_path === "string" ? result.pdf_path : null;
 
     if (pdfPath) {
-      const { data: signedData, error: signErr } = await admin.storage
-        .from("lgpd-exports")
-        .createSignedUrl(pdfPath, 72 * 60 * 60); // 72h in seconds
+      const { data: signedData, error: signErr } = await objectStorage("lgpd-exports").createSignedUrl(
+        pdfPath,
+        72 * 60 * 60,
+      ); // 72h in seconds
 
       if (signErr) {
         console.error("[lgpd-request-detail] signed URL error", signErr.message);

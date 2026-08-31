@@ -28,6 +28,7 @@ import { type NextRequest } from "next/server";
 import { z } from "zod";
 import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
+import { objectStorage } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { temChaveDeEmbedding } from "@/lib/ai/embeddings/chave";
@@ -134,9 +135,11 @@ export async function POST(req: NextRequest): Promise<Response> {
     txt: "text/plain",
   } as const;
 
-  const { error: uploadErr } = await admin.storage
-    .from(BUCKET_DE_CONHECIMENTO)
-    .upload(blobPath, fileBuffer, { contentType: MIME_POR_EXTENSAO[ext], upsert: false });
+  const { error: uploadErr } = await objectStorage(BUCKET_DE_CONHECIMENTO).upload(
+    blobPath,
+    fileBuffer,
+    { contentType: MIME_POR_EXTENSAO[ext], upsert: false },
+  );
 
   if (uploadErr) {
     console.error("[conhecimento-upload] upload falhou:", uploadErr.message);
@@ -148,7 +151,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   try {
     await extrairTextoDoArquivo(blobPath, ext);
   } catch (err) {
-    await admin.storage.from(BUCKET_DE_CONHECIMENTO).remove([blobPath]);
+    await objectStorage(BUCKET_DE_CONHECIMENTO).remove([blobPath]);
     if (err instanceof ErroDeExtracao) {
       return fail("unprocessable_entity", err.message, 422, { requestId });
     }
@@ -179,7 +182,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     .single();
 
   if (ksErr || !ks) {
-    await admin.storage.from(BUCKET_DE_CONHECIMENTO).remove([blobPath]);
+    await objectStorage(BUCKET_DE_CONHECIMENTO).remove([blobPath]);
     if (ksErr?.code === "23505") {
       return fail(
         "knowledge_source_name_in_use",

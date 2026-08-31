@@ -17,6 +17,7 @@ import { z } from "zod";
 import { ok, fail } from "@/lib/api/wrappers";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { requireRole } from "@/lib/auth/require-role";
+import { objectStorage } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseFaqMarkdown } from "@/lib/ai/rag/ingest/faq";
@@ -219,12 +220,14 @@ export async function POST(req: NextRequest): Promise<Response> {
   let metadata: Record<string, unknown> = { ...(input.source_metadata ?? {}) };
   if (tipo === "documento" && input.markdown_blob) {
     const blobPath = `${activeOrg.orgId}/${randomUUID()}.md`;
-    const { error: upErr } = await admin.storage
-      .from(BUCKET_DE_CONHECIMENTO)
-      .upload(blobPath, Buffer.from(input.markdown_blob, "utf8"), {
+    const { error: upErr } = await objectStorage(BUCKET_DE_CONHECIMENTO).upload(
+      blobPath,
+      Buffer.from(input.markdown_blob, "utf8"),
+      {
         contentType: "text/markdown",
         upsert: false,
-      });
+      },
+    );
     if (upErr) {
       console.error("[ai-knowledge-sources] guardar o texto falhou:", upErr.message);
       return fail("internal_error", "Erro ao guardar o conteúdo do material.", 500, { requestId });

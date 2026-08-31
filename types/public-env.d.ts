@@ -21,6 +21,15 @@ interface PublicEnv {
    */
   APP_NAME?: string;
   APP_LOGO_URL?: string;
+  /**
+   * Backend de object storage (`supabase` | `r2`). Não é segredo: só escolhe
+   * como montar a URL pública do logo. Ausente = supabase.
+   */
+  STORAGE_BACKEND?: string;
+  /** Origem pública do R2 (CDN). Vazio = logo não tem URL pública via R2. */
+  R2_PUBLIC_BASE_URL?: string;
+  /** Bucket físico único (não é segredo). Vazio = um S3 por nome lógico. */
+  R2_BUCKET?: string;
 }
 
 interface Window {

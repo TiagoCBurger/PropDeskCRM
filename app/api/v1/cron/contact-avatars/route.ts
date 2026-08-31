@@ -27,6 +27,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { DEFAULT_CHANNEL_PROVIDER, getAdapter, type ChannelProvider } from "@/lib/channels";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { objectStorage } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -182,9 +183,10 @@ async function handle(req: NextRequest): Promise<Response> {
       // de acumular um arquivo órfão por refresh (7 dias × N contatos viraria
       // lixo pago no bucket).
       const path = `${c.organization_id}/avatars/${c.id}.jpg`;
-      const { error: upErr } = await admin.storage
-        .from("whatsapp-media")
-        .upload(path, buf, { contentType: "image/jpeg", upsert: true });
+      const { error: upErr } = await objectStorage("whatsapp-media").upload(path, buf, {
+        contentType: "image/jpeg",
+        upsert: true,
+      });
       if (upErr) {
         await carimbar(null);
         falhas++;

@@ -1,8 +1,8 @@
 ---
 type: roadmap
 project: PropDeskCRM
-status: planned
-last_updated: 2026-08-30
+status: in_progress
+last_updated: 2026-08-31
 owner: TiagoCBurger
 ---
 
@@ -25,7 +25,7 @@ ADR + spec em `docs/specs/`.
 | **Custo previsível** | R2 não cobra egress para a internet; mídia de WhatsApp e exports LGPD crescem com o uso. |
 | **Escala de objetos** | Buckets de mídia e RAG podem ficar grandes; R2 é desenhado para object storage barato. |
 | **Desacoplamento** | Supabase continua forte em Postgres + Auth + Realtime; storage de arquivos vira responsabilidade nossa, não do tier do projeto Supabase. |
-| **S3-compatível** | SDK `@aws-sdk/client-s3` + presigned URLs — pouca reinventada. |
+| **S3-compatível** | Porta própria com SigV4 (`lib/storage/r2-assinatura.ts`) — sem `@aws-sdk` na imagem do self-hoster. |
 
 **O que não motiva a mudança:** abandonar Supabase. Só o **Storage** entra no escopo.
 
@@ -45,9 +45,9 @@ Buckets registrados no `baseline.sql` e usados em runtime:
 
 Padrão de acesso hoje:
 
-- **Upload/download server-side** via `createAdminClient().storage.from(bucket)...`
+- Upload/download server-side via `objectStorage(bucket)` (`lib/storage/`)
 - **URLs assinadas** para mídia sensível (`createSignedUrl`)
-- **URLs públicas** só para `brand-logos` (`/storage/v1/object/public/...`)
+- **URLs públicas** só para `brand-logos` (Supabase `/storage/v1/object/public/...` ou `R2_PUBLIC_BASE_URL`)
 
 Metadados (caminho do objeto, bucket, org) ficam em **Postgres** — isso **permanece**.
 
@@ -93,7 +93,7 @@ R2_REGION=auto
 R2_PUBLIC_BASE_URL=https://cdn.example.com   # só brand-logos / assets públicos
 ```
 
-Validação em `lib/env.ts` quando `STORAGE_BACKEND=r2`.
+Validação das chaves em `lib/env.ts` (opcionais, default supabase). Fail-closed na porta quando `STORAGE_BACKEND=r2` está incompleto — o schema **não** lança no import (derrubaria o app).
 
 ---
 
@@ -104,13 +104,15 @@ Validação em `lib/env.ts` quando `STORAGE_BACKEND=r2`.
 - Intenção registrada em README, `ARCHITECTURE.md`, `VISION.md`.
 - Nenhuma mudança de runtime.
 
-### Fase 1 — Adapter único
+### Fase 1 — Adapter único ✅
 
-- Criar `lib/storage/` com interface mínima:
-  - `upload`, `download`, `remove`, `createSignedUrl`, `publicUrl`
-- Implementações: `supabase-storage.ts` (wrapper do client atual) e `r2-storage.ts` (AWS SDK v3).
-- Selecionar backend via `STORAGE_BACKEND`.
-- **Testes unitários** com mock S3; nenhum bucket real no CI.
+- Porta `lib/storage/` com interface mínima:
+  - `upload`, `download`, `remove`, `createSignedUrl`, `getPublicUrl`
+- Implementações: `supabase.ts` (wrapper do client atual) e `r2.ts` (SigV4 à mão, **sem** `@aws-sdk` na imagem).
+- Selecionar backend via `STORAGE_BACKEND` (default `supabase`; `r2` incompleto é fail-closed).
+- Call sites de produção passam pela porta (gate `tests/unit/storage-porta-unica.test.ts`).
+- **Testes unitários** com fetch/relógio dublados; nenhum bucket real no CI.
+- Dual-write/backfill **não** entram nesta fase.
 
 ### Fase 2 — Escrita dual (opcional, recomendada)
 
@@ -168,11 +170,11 @@ sem script — ver [`docs/doctrine/packaging.md`](../doctrine/packaging.md).
 
 ## Critérios de pronto (Definition of Done da migração)
 
-- [ ] Adapter `lib/storage/` com cobertura unitária
-- [ ] Todos os call sites de `admin.storage.from(...)` migrados para o adapter
+- [x] Adapter `lib/storage/` com cobertura unitária
+- [x] Todos os call sites de `admin.storage.from(...)` migrados para o adapter
 - [ ] Backfill testado em org de staging com ≥10k objetos
-- [ ] Runbook de rollback (voltar `STORAGE_BACKEND=supabase`) documentado
-- [ ] `CHANGELOG.md` com seção **⚠️ Requer atenção** para quem self-hosta
+- [x] Runbook de rollback (voltar `STORAGE_BACKEND=supabase`) documentado
+- [ ] Dual-write (fase 2) e cutover — ainda não
 - [ ] Nenhuma regressão nos workers `media-persist`, `lgpd-export`, `storage-cleanup`
 
 ---

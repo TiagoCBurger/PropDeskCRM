@@ -11,6 +11,7 @@
  * Erros são sempre de ENSINO ({ ok:false, error }), nunca throw (convenção do run).
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { objectStorage } from "@/lib/storage";
 import type { LoadedSkill } from './skills';
 
 const SKILL_ASSETS_BUCKET = 'skill-assets';
@@ -45,7 +46,7 @@ export type ReadSkillReferenceResult =
  * que não casou (mesmo que exista no tenant) devolve skill_not_active.
  */
 export async function readSkillReference(
-  deps: { admin: SupabaseClient },
+  _deps: { admin: SupabaseClient },
   input: { organizationId: string; matchedSkills: readonly LoadedSkill[]; skillName: string; refPath: string },
 ): Promise<ReadSkillReferenceResult> {
   const skill = input.matchedSkills.find((s) => s.name === input.skillName);
@@ -69,7 +70,7 @@ export async function readSkillReference(
     };
   }
   const objectPath = `${input.organizationId}/${skill.name}/${skill.versionId}/${input.refPath}`;
-  const { data, error } = await deps.admin.storage.from(SKILL_ASSETS_BUCKET).download(objectPath);
+  const { data, error } = await objectStorage(SKILL_ASSETS_BUCKET).download(objectPath);
   if (error || data === null) {
     return {
       ok: false,

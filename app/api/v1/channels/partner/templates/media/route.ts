@@ -28,7 +28,7 @@ import type { NextRequest } from "next/server";
 import { fail, ok } from "@/lib/api/wrappers";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { logger } from "@/lib/logger";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { objectStorage } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -74,19 +74,18 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   const ext = mime === "image/png" ? "png" : "jpg";
   const caminho = `${org.orgId}/templates/${randomUUID()}.${ext}`;
-  const admin = createAdminClient();
 
-  const { error: erroUp } = await admin.storage
-    .from("whatsapp-media")
-    .upload(caminho, Buffer.from(await file.arrayBuffer()), { contentType: mime, upsert: false });
+  const { error: erroUp } = await objectStorage("whatsapp-media").upload(
+    caminho,
+    Buffer.from(await file.arrayBuffer()),
+    { contentType: mime, upsert: false },
+  );
   if (erroUp) {
     logger.error("[partner/templates/media] upload falhou", { detail: erroUp.message, requestId });
     return fail("internal_error", "Erro ao subir a imagem.", 500, { requestId });
   }
 
-  const { data: assinada, error: erroUrl } = await admin.storage
-    .from("whatsapp-media")
-    .createSignedUrl(caminho, VALIDADE_SEGUNDOS);
+  const { data: assinada, error: erroUrl } = await objectStorage("whatsapp-media").createSignedUrl(caminho, VALIDADE_SEGUNDOS);
   if (erroUrl || !assinada?.signedUrl) {
     logger.error("[partner/templates/media] assinatura falhou", {
       detail: erroUrl?.message ?? "sem url",

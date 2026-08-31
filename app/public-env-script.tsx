@@ -71,6 +71,13 @@ export async function PublicEnvScript({
     // `""`), então o navegador não precisa aprender um segundo jeito de dizer
     // "não tem logo".
     APP_LOGO_URL: marca.logoUrl ?? "",
+    // Não são segredo: só dizem ao browser como montar a URL pública do logo
+    // quando o operador ligou R2. Ausentes = o default supabase.
+    STORAGE_BACKEND: env.STORAGE_BACKEND,
+    R2_PUBLIC_BASE_URL: env.R2_PUBLIC_BASE_URL,
+    // Nome do bucket físico, se houver. Não é segredo — o browser monta a
+    // URL pública do logo com a mesma regra da porta (prefixo do lógico).
+    R2_BUCKET: env.R2_BUCKET,
   })
     // Evita quebrar o </script> se algum valor contiver a sequência.
     .replace(/</g, "\\u003c");

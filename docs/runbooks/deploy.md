@@ -74,6 +74,12 @@ commit → push → PR → merge na main → CI publica imagem → VPS puxa
    não um `up -d` na mão: ele puxa a tag publicada, re-aplica o `baseline.sql`,
    faz backup antes e grava as três imagens no `.env`.
 
+   O job `deploy-vps` de `publish-image.yml` chama esse mesmo script por SSH
+   **quando** os secrets `VPS_HOST` / `VPS_USER` / `VPS_SSH_KEY` existem — e
+   nesse caso `VPS_SSH_KNOWN_HOSTS` também é obrigatório (sem TOFU no runner).
+   Sem os três primeiros o job sai verde (a VPS ainda não foi alugada). Lista,
+   R2 e Supabase Cloud: [`topologia-vps-supabase-cloud-r2.md`](./topologia-vps-supabase-cloud-r2.md).
+
 > **`latest` não é a última release.** Ele é publicado a partir da branch default, então
 > segue o **topo da `main`** — código ainda não lançado. Quem quer a última release usa
 > `stable`; quem opera um cliente usa o número da versão. Ver

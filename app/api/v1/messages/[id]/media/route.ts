@@ -19,6 +19,7 @@ import {
   type ChannelProvider,
   type ChannelSessionRef,
 } from "@/lib/channels";
+import { objectStorage } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -64,10 +65,10 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
   }
 
   if (msg.media_storage_path) {
-    const admin = createAdminClient();
-    const { data: signed, error: signErr } = await admin.storage
-      .from("whatsapp-media")
-      .createSignedUrl(msg.media_storage_path, SIGNED_URL_TTL_S);
+    const { data: signed, error: signErr } = await objectStorage("whatsapp-media").createSignedUrl(
+      msg.media_storage_path,
+      SIGNED_URL_TTL_S,
+    );
     if (!signErr && signed?.signedUrl) {
       const response = NextResponse.redirect(signed.signedUrl, 302);
       response.headers.set("X-Request-Id", requestId);

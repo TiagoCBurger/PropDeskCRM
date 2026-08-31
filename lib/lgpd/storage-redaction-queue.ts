@@ -7,8 +7,9 @@
  * skipped. Re-runs ignore terminal rows.
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
+import { objectStorage } from "@/lib/storage";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface DrainStats {
   attempted: number;
@@ -63,9 +64,7 @@ export async function drainStorageRedactionQueue(
     const nextAttempts = row.attempts + 1;
 
     try {
-      const { error: removeErr } = await admin.storage
-        .from(row.bucket)
-        .remove([row.object_path]);
+      const { error: removeErr } = await objectStorage(row.bucket).remove([row.object_path]);
 
       if (removeErr) {
         // Treat "not found" as deleted (idempotent / object already gone).
