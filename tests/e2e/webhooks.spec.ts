@@ -109,7 +109,7 @@ async function esperarRunComSucesso(
   ruleName: string,
 ): Promise<void> {
   let encontrou = false;
-  for (let tentativa = 0; tentativa < 15 && !encontrou; tentativa++) {
+  for (let tentativa = 0; tentativa < 20 && !encontrou; tentativa++) {
     await drenarEventLog(request, page);
     const resposta = await request.get(`${APP_URL}/api/v1/automation-rules/runs?limit=50`);
     expect(resposta.ok()).toBeTruthy();

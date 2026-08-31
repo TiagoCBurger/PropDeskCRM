@@ -589,6 +589,7 @@ jobs:
           pnpm exec tsx scripts/seed-e2e-escalacao.ts
           pnpm exec tsx --env-file=.env.local scripts/seed-e2e-capacidades-ausentes.ts
           pnpm exec tsx scripts/seed-e2e-followup-agent.ts
+          pnpm exec tsx scripts/seed-e2e-agenda.ts
           # O catálogo da OpenRouter não existe em banco fresco (o baseline
           # semeia só anthropic/openai/google; os demais vêm do cron diário, que
           # busca na internet). Sem esta linha, `prova-painel-provedores` mede a
