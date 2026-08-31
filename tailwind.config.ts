@@ -137,6 +137,16 @@ const config: Config = {
           "Consolas",
           "monospace",
         ],
+        // Outfit — títulos (design VibeFly importado). `font-display` porque
+        // `font-heading`/`font-title` já não existiam e `display` é o nome
+        // que o próprio TOKENS.md do design usa pro papel ("H1 de tela").
+        display: [
+          "var(--font-display)",
+          "var(--font-atkinson)",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       spacing: {
         0: "var(--space-0)",

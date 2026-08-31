@@ -262,7 +262,14 @@ describe("diagnóstico não vaza identidade", () => {
     // Mesma disciplina de `contraste.ts`: com a tabela por organização, esses
     // motivos passam a conviver num log só, e a cor de uma empresa não tem por
     // que aparecer no diagnóstico de outra.
-    const sementes = ["#f5c518", "#808080", "#0f172a", "#dc2626"];
+    //
+    // As 4 sementes precisam gerar PELO MENOS 1 motivo cada (guarda de
+    // vacuidade da linha de baixo) — sob o design system atual (Ink, não
+    // Sage; ver `app/globals.css`) `#0f172a` (navy) não desloca nada e não
+    // dispara reconciliação nenhuma, e ficou de fora por isso: testar
+    // "não vaza o hex" contra uma semente que não emite motivo nenhum
+    // passaria sem checar nada. `#14b8a6` (teal) dispara 2 motivos aqui.
+    const sementes = ["#f5c518", "#808080", "#14b8a6", "#dc2626"];
     for (const hex of sementes) {
       const marca = resolverMarca([camadaDoAmbiente({ APP_ACCENT_HEX: hex })], REGUA);
       expect(marca.motivos.length).toBeGreaterThan(0);

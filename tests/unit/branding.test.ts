@@ -304,6 +304,12 @@ const MARCA_CONGELADA: Record<string, EntradaDeMarca> = {
   },
 
   // ─── DEV — fixture de teste; não embarca. ───
+  "app/api/dev/tunnel-url/route.ts": {
+    categoria: "DEV",
+    motivo:
+      "caminho de arquivo em /tmp onde o cloudflared grava a URL pública durante preview local; não é texto de interface e não embarca em produção",
+    marcas: ["deskcomm-tunnel-url.txt"],
+  },
   "lib/agent-engine/agent/draft-reply.test.ts": {
     categoria: "DEV",
     motivo: "nome de agente numa fixture de teste ('Bot Deskcomm'); não sai da suíte",
