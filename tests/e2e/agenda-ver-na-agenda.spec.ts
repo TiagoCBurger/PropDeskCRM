@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -45,10 +46,14 @@ interface Creds {
 
 function lerCreds(): Creds {
   const p = path.join(RAIZ, ".e2e-creds.json");
-  if (!fs.existsSync(p)) throw new Error("`.e2e-creds.json` ausente — rode `scripts/seed-e2e-credentials.ts`");
+  if (!fs.existsSync(p)) {
+    execFileSync("npx", ["tsx", "scripts/seed-e2e-credentials.ts"], { stdio: "inherit" });
+  }
   const c = JSON.parse(fs.readFileSync(p, "utf8")) as Creds;
-  if (!c.agenda) throw new Error(".e2e-creds.json sem o bloco `agenda` — rode `scripts/seed-e2e-agenda.ts`");
-  return c;
+  if (!c.agenda) {
+    execFileSync("npx", ["tsx", "scripts/seed-e2e-agenda.ts"], { stdio: "inherit" });
+  }
+  return JSON.parse(fs.readFileSync(p, "utf8")) as Creds;
 }
 
 async function entrar(page: Page, creds: Creds) {

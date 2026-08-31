@@ -143,6 +143,30 @@ export async function diasDesenhados(page: Page): Promise<string[]> {
 }
 
 /**
+ * O mini-calendário do painel abre no mês de HOJE. No último dia útil do mês,
+ * a semana seguinte inteira pode cair no mês seguinte — e nenhum dia de agosto
+ * fica `data-disponivel="true"`. Sem avançar o mês ANTES de falhar, as specs
+ * acusam o seed quando o defeito é só calendário (medido em 2026-08-31).
+ */
+async function garantirDiaClicavelNoPainel(page: Page, mensagemFalha: string): Promise<void> {
+  const dias = () => page.locator('[data-testid^="dia-"][data-disponivel="true"]');
+
+  // Espera o painel pintar células (a consulta ainda pode estar em voo).
+  await expect
+    .poll(async () => await page.locator('[data-testid^="dia-"]').count(), {
+      timeout: 20_000,
+      message: "o mini-calendário do painel não desenhou nenhum dia",
+    })
+    .toBeGreaterThan(0);
+
+  if ((await dias().count()) === 0) {
+    await page.getByTestId("mes-seguinte").click();
+  }
+
+  await expect(dias().first(), mensagemFalha).toBeVisible({ timeout: 20_000 });
+}
+
+/**
  * Escolhe, no painel de marcação já aberto, um dia que a grade esteja
  * desenhando — e devolve a chave escolhida.
  *
@@ -164,10 +188,10 @@ export async function escolherDiaDesenhado(page: Page, dias: readonly string[]):
 
   // Até a consulta de horários responder, TODO dia nasce indisponível — uma
   // varredura feita antes disso leria "nenhum dia da semana desenhada" onde há.
-  await expect(
-    page.locator('[data-testid^="dia-"][data-disponivel="true"]').first(),
+  await garantirDiaClicavelNoPainel(
+    page,
     "nenhum dia disponível no painel — o seed da agenda não deixou jornada publicada",
-  ).toBeVisible({ timeout: 20_000 });
+  );
 
   let candidatos = await disponiveis();
   if (candidatos.length === 0) {
@@ -238,11 +262,11 @@ async function diasCheios(page: Page): Promise<string[]> {
     return chaves.filter((k) => k > hoje).sort();
   };
 
-  await expect(
-    page.locator('[data-testid^="dia-"][data-disponivel="true"]').first(),
+  await garantirDiaClicavelNoPainel(
+    page,
     "nenhum dia disponível — o seed da agenda não deixou jornada publicada, e sem " +
       "dia clicável a coluna de horários nunca abre (o defeito ficaria invisível)",
-  ).toBeVisible({ timeout: 20_000 });
+  );
 
   const cheios = await varrer();
   if (cheios.length > 0) return cheios;

@@ -60,13 +60,21 @@ async function login(page: Page, email: string): Promise<void> {
  */
 async function abrirConversaComMensagens(page: Page): Promise<boolean> {
   await page.goto("/app/inbox?filter=all");
-  const bolhas = page.locator("[class*='rounded-2xl']");
   const primeira = page.locator("li, [role='listitem']").first();
   if (await primeira.count()) await primeira.click();
+  const bolhas = page.locator("[class*='rounded-2xl']");
   await expect(bolhas.first())
     .toBeVisible({ timeout: 8000 })
     .catch(() => undefined);
   return (await bolhas.count()) > 0;
+}
+
+/** Linha de mensagem que expõe o botão de citação — inbound ou outbound. */
+function linhaComResponder(page: Page) {
+  return page
+    .locator(".group")
+    .filter({ has: page.getByRole("button", { name: /Responder a esta mensagem/i }) })
+    .first();
 }
 
 test.describe("responder citando", () => {
@@ -75,12 +83,15 @@ test.describe("responder citando", () => {
     const temMensagens = await abrirConversaComMensagens(page);
     test.skip(!temMensagens, "ambiente sem conversa com mensagens — nada a citar");
 
-    const responder = page.getByRole("button", { name: /Responder a esta mensagem/i }).first();
+    const linha = linhaComResponder(page);
+    await expect(linha, "nenhuma mensagem expõe o botão de responder").toBeVisible({
+      timeout: 10_000,
+    });
 
-    // O botão vive em `opacity-0` até o hover. `toBeVisible` do Playwright
-    // considera opacidade 0 como visível, então o hover é o que prova de
-    // verdade que ele é alcançável — e o clique, que é clicável.
-    await page.locator("[class*='rounded-2xl']").first().hover();
+    const responder = linha.getByRole("button", { name: /Responder a esta mensagem/i });
+
+    // O botão fica `opacity-0` até o hover no desktop — o hover é na linha `.group`.
+    await linha.hover();
     await expect(responder).toBeVisible();
     await responder.click();
 
@@ -103,8 +114,10 @@ test.describe("responder citando", () => {
     const temMensagens = await abrirConversaComMensagens(page);
     test.skip(!temMensagens, "ambiente sem conversa com mensagens");
 
-    await page.locator("[class*='rounded-2xl']").first().hover();
-    const responder = page.getByRole("button", { name: /Responder a esta mensagem/i }).first();
+    const linha = linhaComResponder(page);
+    await expect(linha).toBeVisible({ timeout: 10_000 });
+    await linha.hover();
+    const responder = linha.getByRole("button", { name: /Responder a esta mensagem/i });
     await responder.click();
     await expect(page.getByRole("button", { name: /Cancelar resposta/i })).toBeVisible();
 
