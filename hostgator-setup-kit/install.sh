@@ -1555,6 +1555,19 @@ esac
   printf '# e cole as duas chaves aqui (depois: docker compose up -d app).\n'
   envq VAPID_PUBLIC_KEY "${VAPID_PUBLIC_KEY:-}"
   envq VAPID_PRIVATE_KEY "${VAPID_PRIVATE_KEY:-}"
+  # Object storage: default supabase. Quem ligar R2 no .env não pode perder as
+  # chaves no próximo install.sh — este bloco fecha com `} > .env` e TRUNCA.
+  # O gate em test-validators.sh cobra exatamente isto (chaves no
+  # .env.hostgator.example têm de ter envq aqui). Não viram pergunta: são
+  # opcionais e quem já instala continua no Storage do Supabase.
+  envq STORAGE_BACKEND "${STORAGE_BACKEND:-supabase}"
+  envq R2_ACCOUNT_ID "${R2_ACCOUNT_ID:-}"
+  envq R2_ACCESS_KEY_ID "${R2_ACCESS_KEY_ID:-}"
+  envq R2_SECRET_ACCESS_KEY "${R2_SECRET_ACCESS_KEY:-}"
+  envq R2_ENDPOINT "${R2_ENDPOINT:-}"
+  envq R2_REGION "${R2_REGION:-auto}"
+  envq R2_BUCKET "${R2_BUCKET:-}"
+  envq R2_PUBLIC_BASE_URL "${R2_PUBLIC_BASE_URL:-}"
   printf '# Telemetria de erros (você escolheu isto durante a instalação).\n'
   printf '#   "off"  = não envia nada.\n'
   printf '#   vazio  = só ERRO pro Sentry da comunidade, com CPF/telefone/e-mail\n'
