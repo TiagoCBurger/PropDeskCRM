@@ -3,70 +3,109 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────────────────
-   DeskcommCRM — Design System tokens (Sage palette · density Aerada)
-   Source of truth: /app/design/lib/tokens.ts (PALETTES.sage)
+   DeskcommCRM — Design System tokens (paleta VibeFly · densidade Aerada)
+   Source of truth: este arquivo. `/app/design/lib/tokens.ts` guarda a Sage
+   (e as outras 4 candidatas descartadas) como registro histórico da escolha
+   anterior — não gera mais o CSS shipado.
    Light + dark drawn separately (NOT inverted).
+
+   ── Por que o accent é INK, e o lime NÃO É `--color-accent` ────────────────
+   O design importado (canvas Claude Design "CRM conversacional com agentes
+   IA") usa lime (`#dfff00`) como cor de destaque — mas só como PREENCHIMENTO
+   sólido atrás de texto escuro (botão, badge, pílula ativa), nunca como
+   borda, anel de foco ou texto sobre o fundo creme. Medido:
+   `contraste(#dfff00, #f9f8f3) = 1.07:1` — muito abaixo do piso de 3:1 que
+   `lib/branding/contraste.ts` exige pro papel "componente" (borda, ícone,
+   anel de foco), porque lime e creme são as duas quase igualmente claras.
+   Usar lime como `--color-accent` quebraria todo anel de foco, borda de
+   `outline`/`secondary` e link do produto — não é só o teste que reprovaria,
+   é o usuário que perderia a borda.
+
+   Por isso o accent do design system continua sendo um ramp de 11 stops
+   ancorado no INK (`#2c2920`, `rampaDeSemente('#2c2920')` — Δ ≤ 2/255,
+   catraca em `tests/unit/branding-rampa.test.ts`), que é a cor estrutural
+   dominante do próprio design (texto, pílula ativa, borda). O lime vira um
+   token à parte — `--color-spark` — usado deliberadamente só em CTA/badge de
+   estado positivo, sempre como fundo sólido com `--color-spark-fg` escuro
+   por cima. Ver `docs/...` (a decidir) ou o histórico do PR para o raciocínio
+   completo; o número acima é reproduzível com
+   `razaoDeContraste("#dfff00", "#f9f8f3")` em `lib/branding/contraste.ts`.
    ───────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Surfaces (light) */
-  --color-bg: #faf9f6;
+  /* Surfaces (light) — creme VibeFly */
+  --color-bg: #f9f8f3;
   --color-surface: #ffffff;
-  --color-surface-elevated: #f5f3ee;
+  --color-surface-elevated: #f1efe6;
   --color-overlay: rgba(28, 26, 22, 0.42);
 
-  /* Text (light) */
-  --color-text: #1c1a16;
-  --color-text-muted: #5d594f;
-  --color-text-subtle: #7d786c;
+  /* Text (light) — tinta VibeFly */
+  --color-text: #2c2920;
+  --color-text-muted: #6b6658;
+  --color-text-subtle: #9a958a;
 
   /* Borders (light) */
-  --color-border: #e7e3da;
-  --color-border-strong: #d2cdbf;
+  --color-border: #e5e4de;
+  --color-border-strong: #d5d2c6;
 
-  /* Accent — Sage (11 stops) */
-  --color-accent-50:  #f3f6f1;
-  --color-accent-100: #e4ebe0;
-  --color-accent-200: #c8d6c1;
-  --color-accent-300: #a4ba9a;
-  --color-accent-400: #82a077;
-  --color-accent-500: #67885d;
-  --color-accent-600: #506d48;
-  --color-accent-700: #41573b;
-  --color-accent-800: #374731;
-  --color-accent-900: #2f3c2b;
-  --color-accent-950: #171f15;
+  /* Accent — Ink (11 stops), ver nota acima sobre por que não é o lime */
+  --color-accent-50:  #f5f5f3;
+  --color-accent-100: #e3e2df;
+  --color-accent-200: #c2c0bb;
+  --color-accent-300: #97948c;
+  --color-accent-400: #706c61;
+  --color-accent-500: #4e4b40;
+  --color-accent-600: #2c2920;
+  --color-accent-700: #28261f;
+  --color-accent-800: #25231e;
+  --color-accent-900: #23211d;
+  --color-accent-950: #1d1c1a;
   --color-accent: var(--color-accent-600);
   --color-accent-fg: #ffffff;
   --color-accent-soft: var(--color-accent-100);
   --color-accent-hover: var(--color-accent-700);
 
-  /* Neutrals — greige (11 stops, light) */
-  --color-neutral-50:  #faf9f6;
-  --color-neutral-100: #f3f1ec;
-  --color-neutral-200: #e7e3da;
-  --color-neutral-300: #d2cdbf;
-  --color-neutral-400: #a9a395;
-  --color-neutral-500: #7d786c;
-  --color-neutral-600: #5d594f;
-  --color-neutral-700: #46433b;
-  --color-neutral-800: #2e2c26;
-  --color-neutral-900: #1c1a16;
-  --color-neutral-950: #0e0d0a;
+  /* Spark — o lime do design importado. Fundo sólido só, nunca borda/texto
+     sobre o creme (ver nota grande acima). Usado em CTA principal e badge de
+     estado positivo (`publicado`, `validada`, `confirmado`, `indexado`). */
+  --color-spark: #dfff00;
+  --color-spark-fg: #1a1a1a;
+  /* NÃO nomeie um token novo terminando em "-soft": `lib/branding/contraste.ts`
+     trata QUALQUER `--*-soft` como superfície tingida da rampa do accent
+     (`d.prop.endsWith("-soft")`) e passaria a medir o accent/ring contra esta
+     cor lime sem relação nenhuma com o accent — foi o que `-spark-soft`
+     quebrou aqui antes de virar `-tint`. */
+  --color-spark-tint: rgba(223, 255, 0, 0.28);
 
-  /* States (light) */
-  --color-success: #5a8a5f;
-  --color-success-bg: rgba(90, 138, 95, 0.12);
-  --color-success-fg: #41673f;
-  --color-warning: #b07a2b;
-  --color-warning-bg: rgba(176, 122, 43, 0.12);
-  --color-warning-fg: #875a1a;
-  --color-error: #a94a3c;
-  --color-error-bg: rgba(169, 74, 60, 0.12);
-  --color-error-fg: #8a3a2e;
-  --color-info: #4a7a93;
-  --color-info-bg: rgba(74, 122, 147, 0.12);
-  --color-info-fg: #355d72;
+  /* Neutrals — creme→tinta (11 stops, light) */
+  --color-neutral-50:  #f9f8f3;
+  --color-neutral-100: #f1efe6;
+  --color-neutral-200: #e5e4de;
+  --color-neutral-300: #d5d2c6;
+  --color-neutral-400: #b3ada0;
+  --color-neutral-500: #9a958a;
+  --color-neutral-600: #6b6658;
+  --color-neutral-700: #524d42;
+  --color-neutral-800: #3a362d;
+  --color-neutral-900: #2c2920;
+  --color-neutral-950: #17150f;
+
+  /* States (light) — mesmo mapeamento do TOKENS.md do design:
+     success = a mesma família do spark (lido como "confirmado/publicado"),
+     escurecido pra servir de TEXTO legível sobre o creme (o lime cru não
+     serve: mesmo problema de contraste do accent, ver nota grande acima). */
+  --color-success: #556213;
+  --color-success-bg: rgba(223, 255, 0, 0.16);
+  --color-success-fg: #3f4a0e;
+  --color-warning: #92400e;
+  --color-warning-bg: rgba(245, 158, 11, 0.16);
+  --color-warning-fg: #7a350c;
+  --color-error: #b42318;
+  --color-error-bg: rgba(220, 38, 38, 0.12);
+  --color-error-fg: #8f1c13;
+  --color-info: #0f766e;
+  --color-info-bg: rgba(57, 232, 209, 0.22);
+  --color-info-fg: #0b5b55;
 
   /* Spacing (4-base) */
   --space-0: 0px;
@@ -228,42 +267,42 @@
    (lib/branding/css.ts), que só ganha consumidor com a tela de marca.
    ───────────────────────────────────────────────────────────────────────── */
 [data-theme="light"] {
-  --color-bg: #faf9f6;
+  --color-bg: #f9f8f3;
   --color-surface: #ffffff;
-  --color-surface-elevated: #f5f3ee;
+  --color-surface-elevated: #f1efe6;
   --color-overlay: rgba(28, 26, 22, 0.42);
-  --color-text: #1c1a16;
-  --color-text-muted: #5d594f;
-  --color-text-subtle: #7d786c;
-  --color-border: #e7e3da;
-  --color-border-strong: #d2cdbf;
+  --color-text: #2c2920;
+  --color-text-muted: #6b6658;
+  --color-text-subtle: #9a958a;
+  --color-border: #e5e4de;
+  --color-border-strong: #d5d2c6;
   --color-accent: var(--color-accent-600);
   --color-accent-fg: #ffffff;
   --color-accent-soft: var(--color-accent-100);
   --color-accent-hover: var(--color-accent-700);
-  --color-neutral-50: #faf9f6;
-  --color-neutral-100: #f3f1ec;
-  --color-neutral-200: #e7e3da;
-  --color-neutral-300: #d2cdbf;
-  --color-neutral-400: #a9a395;
-  --color-neutral-500: #7d786c;
-  --color-neutral-600: #5d594f;
-  --color-neutral-700: #46433b;
-  --color-neutral-800: #2e2c26;
-  --color-neutral-900: #1c1a16;
-  --color-neutral-950: #0e0d0a;
-  --color-success: #5a8a5f;
-  --color-success-bg: rgba(90, 138, 95, 0.12);
-  --color-success-fg: #41673f;
-  --color-warning: #b07a2b;
-  --color-warning-bg: rgba(176, 122, 43, 0.12);
-  --color-warning-fg: #875a1a;
-  --color-error: #a94a3c;
-  --color-error-bg: rgba(169, 74, 60, 0.12);
-  --color-error-fg: #8a3a2e;
-  --color-info: #4a7a93;
-  --color-info-bg: rgba(74, 122, 147, 0.12);
-  --color-info-fg: #355d72;
+  --color-neutral-50: #f9f8f3;
+  --color-neutral-100: #f1efe6;
+  --color-neutral-200: #e5e4de;
+  --color-neutral-300: #d5d2c6;
+  --color-neutral-400: #b3ada0;
+  --color-neutral-500: #9a958a;
+  --color-neutral-600: #6b6658;
+  --color-neutral-700: #524d42;
+  --color-neutral-800: #3a362d;
+  --color-neutral-900: #2c2920;
+  --color-neutral-950: #17150f;
+  --color-success: #556213;
+  --color-success-bg: rgba(223, 255, 0, 0.16);
+  --color-success-fg: #3f4a0e;
+  --color-warning: #92400e;
+  --color-warning-bg: rgba(245, 158, 11, 0.16);
+  --color-warning-fg: #7a350c;
+  --color-error: #b42318;
+  --color-error-bg: rgba(220, 38, 38, 0.12);
+  --color-error-fg: #8f1c13;
+  --color-info: #0f766e;
+  --color-info-bg: rgba(57, 232, 209, 0.22);
+  --color-info-fg: #0b5b55;
   --shadow-xs: 0 1px 2px 0 rgba(20, 18, 14, 0.04);
   --shadow-sm: 0 1px 2px 0 rgba(20, 18, 14, 0.05), 0 1px 1px 0 rgba(20, 18, 14, 0.03);
   --shadow-md: 0 4px 12px -2px rgba(20, 18, 14, 0.06), 0 2px 4px -1px rgba(20, 18, 14, 0.04);
@@ -305,64 +344,70 @@
 }
 
 [data-theme="dark"] {
-  /* Surfaces (dark — drawn) */
-  --color-bg: #161510;
-  --color-surface: #1d1c17;
-  --color-surface-elevated: #272620;
+  /* Surfaces (dark — drawn, não invertido) */
+  --color-bg: #17150f;
+  --color-surface: #1e1c16;
+  --color-surface-elevated: #28251d;
   --color-overlay: rgba(0, 0, 0, 0.55);
 
   /* Text (dark) */
-  --color-text: #f5f4ef;
-  --color-text-muted: #8e8b7f;
-  --color-text-subtle: #605e54;
+  --color-text: #f7f5ef;
+  --color-text-muted: #a89f8c;
+  --color-text-subtle: #7d7566;
 
   /* Borders (dark) */
-  --color-border: #33312a;
-  --color-border-strong: #444239;
+  --color-border: #322e27;
+  --color-border-strong: #423d34;
 
-  /* Accent stays same hex stops; default shifts up for dark contrast */
-  --color-accent-50:  #f3f6f1;
-  --color-accent-100: #e4ebe0;
-  --color-accent-200: #c8d6c1;
-  --color-accent-300: #a4ba9a;
-  --color-accent-400: #82a077;
-  --color-accent-500: #67885d;
-  --color-accent-600: #506d48;
-  --color-accent-700: #41573b;
-  --color-accent-800: #374731;
-  --color-accent-900: #2f3c2b;
-  --color-accent-950: #171f15;
-  --color-accent: var(--color-accent-400);
-  --color-accent-fg: #161510;
-  --color-accent-soft: rgba(130, 160, 119, 0.16);
-  --color-accent-hover: var(--color-accent-300);
+  /* Accent — mesmos 11 stops Ink do claro; só o papel (accent/hover) sobe de
+     stop pra manter contraste sobre o fundo escuro (mesmo padrão da Sage). */
+  --color-accent-50:  #f5f5f3;
+  --color-accent-100: #e3e2df;
+  --color-accent-200: #c2c0bb;
+  --color-accent-300: #97948c;
+  --color-accent-400: #706c61;
+  --color-accent-500: #4e4b40;
+  --color-accent-600: #2c2920;
+  --color-accent-700: #28261f;
+  --color-accent-800: #25231e;
+  --color-accent-900: #23211d;
+  --color-accent-950: #1d1c1a;
+  /* Stop 300, não 400: contra `--color-surface-elevated` o 400 dava só 2,92
+     (abaixo do piso 3:1 de componente — `tests/unit/branding-contraste.test.ts`
+     mede e reprova). No 300 a frente muda de lado: branco só dá 3,03, preto
+     dá bem mais — por isso `--color-accent-fg` também vira preto aqui, é o
+     `melhorFrenteSobre` recalculado pro novo stop, não um valor solto. */
+  --color-accent: var(--color-accent-300);
+  --color-accent-fg: #000000;
+  --color-accent-soft: rgba(112, 108, 97, 0.1);
+  --color-accent-hover: var(--color-accent-200);
 
-  /* Neutrals — greige (11 stops, dark) */
-  --color-neutral-50:  #f5f4ef;
-  --color-neutral-100: #e6e4dc;
-  --color-neutral-200: #bbb8ac;
-  --color-neutral-300: #8e8b7f;
-  --color-neutral-400: #605e54;
-  --color-neutral-500: #444239;
-  --color-neutral-600: #33312a;
-  --color-neutral-700: #272620;
-  --color-neutral-800: #1d1c17;
-  --color-neutral-900: #161510;
-  --color-neutral-950: #0c0b08;
+  /* Neutrals — creme→tinta (11 stops, dark) */
+  --color-neutral-50:  #f7f5ef;
+  --color-neutral-100: #e8e4d9;
+  --color-neutral-200: #cec9ba;
+  --color-neutral-300: #a89f8c;
+  --color-neutral-400: #7d7566;
+  --color-neutral-500: #423d34;
+  --color-neutral-600: #322e27;
+  --color-neutral-700: #28251d;
+  --color-neutral-800: #1e1c16;
+  --color-neutral-900: #17150f;
+  --color-neutral-950: #0e0d09;
 
-  /* States (dark) */
-  --color-success: #82a077;
-  --color-success-bg: rgba(130, 160, 119, 0.18);
-  --color-success-fg: #a4ba9a;
-  --color-warning: #d09455;
-  --color-warning-bg: rgba(208, 148, 85, 0.18);
-  --color-warning-fg: #e0ad77;
-  --color-error: #c87263;
-  --color-error-bg: rgba(200, 114, 99, 0.18);
-  --color-error-fg: #d99182;
-  --color-info: #7da9bf;
-  --color-info-bg: rgba(125, 169, 191, 0.18);
-  --color-info-fg: #9bbfd2;
+  /* States (dark) — mesmas famílias do claro, clareadas pro fundo escuro */
+  --color-success: #c8e600;
+  --color-success-bg: rgba(223, 255, 0, 0.16);
+  --color-success-fg: #dfff00;
+  --color-warning: #e8b27a;
+  --color-warning-bg: rgba(245, 158, 11, 0.18);
+  --color-warning-fg: #f0c493;
+  --color-error: #f2a08c;
+  --color-error-bg: rgba(220, 38, 38, 0.18);
+  --color-error-fg: #f6b6a6;
+  --color-info: #5eead4;
+  --color-info-bg: rgba(57, 232, 209, 0.18);
+  --color-info-fg: #91f2e0;
 
   /* Shadows — heavier in dark */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.30);
@@ -389,7 +434,7 @@
   --destructive-foreground: #ffffff;
   --border: var(--color-border);
   --input: var(--color-border);
-  --ring: var(--color-accent-400);
+  --ring: var(--color-accent-300);
   /* ---- Agenda · cor de pessoa (tema escuro) ----------------------------
    * Mais claras e menos saturadas que as do claro: sobre `#161510` a versão
    * escura de cada matiz sumiria. Mesma ordem, mesmos nomes.
@@ -463,14 +508,18 @@
     color: var(--color-accent-50);
   }
 
-  /* Focus ring: Sage 500/400, 2px with offset */
+  /* Focus ring: Ink 500/300, 2px with offset. O stop escuro é 300 (mais claro
+     que o 400 do fill/accent) porque componente (borda/anel) exige só 3:1 de
+     contraste, mas contra `--color-surface-elevated` o 400 dava 2,92 — a
+     mesma folga que o comentário original da Sage descrevia pro par claro
+     (accent/anel usam stops DIFERENTES de propósito, ver `--ring` no claro). */
   :focus-visible {
     outline: 2px solid var(--color-accent-500);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
   [data-theme="dark"] :focus-visible {
-    outline-color: var(--color-accent-400);
+    outline-color: var(--color-accent-300);
   }
 
   /* Modo de alto contraste do sistema (Windows High Contrast / forced-colors).

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Atkinson_Hyperlegible, IBM_Plex_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Outfit } from "next/font/google";
 import { headers } from "next/headers";
 import { Toaster } from "sonner";
 import { coresDaBarraDoNavegador } from "@/lib/branding/barra-do-navegador";
@@ -25,14 +25,26 @@ import { Providers } from "./providers";
 import { PublicEnvScript } from "./public-env-script";
 import "./globals.css";
 
-const atkinson = Atkinson_Hyperlegible({
+// Par tipográfico VibeFly (design importado): Inter pro corpo, Outfit pros
+// títulos (Outfit 300 é o "H1 de tela" do TOKENS.md do design), JetBrains
+// Mono pros valores tabulares/técnicos. Substituiu Atkinson Hyperlegible +
+// IBM Plex Mono — mesmas variáveis CSS (`--font-atkinson`, `--font-mono`)
+// pra não precisar tocar em `tailwind.config.ts` além do necessário.
+const atkinson = Inter({
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "700"],
+  weight: ["300", "400", "500", "600"],
   display: "swap",
   variable: "--font-atkinson",
 });
 
-const plexMono = IBM_Plex_Mono({
+const outfit = Outfit({
+  subsets: ["latin", "latin-ext"],
+  weight: ["200", "300", "400", "500", "600"],
+  display: "swap",
+  variable: "--font-display",
+});
+
+const plexMono = JetBrains_Mono({
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500"],
   display: "swap",
@@ -278,7 +290,7 @@ export default function RootLayout({
       lang="pt-BR"
       data-theme="light"
       suppressHydrationWarning
-      className={`${atkinson.variable} ${plexMono.variable}`}
+      className={`${atkinson.variable} ${outfit.variable} ${plexMono.variable}`}
     >
       <head>
         {/* Primeiro de tudo: a cor da instalação, antes do CSS e do script de tema. */}

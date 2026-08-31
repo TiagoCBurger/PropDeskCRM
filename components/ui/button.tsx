@@ -5,9 +5,13 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /**
- * Button — Sage design system.
+ * Button — design system VibeFly (accent = ink; ver nota grande em
+ * `app/globals.css` sobre por que o lime do design importado NÃO é o accent).
  * Variants:
- *   - primary (default): accent fill, branded CTA
+ *   - primary (default): accent (ink) fill, ação neutra de maior ênfase
+ *   - spark: fundo lime — o CTA "de faísca" do design importado (Novo
+ *     agente, Publicar versão, Instalar…). Use com parcimônia: é a cor mais
+ *     saturada do sistema, reservada pra UMA ação por tela
  *   - secondary: surface-elevated com border, ação neutra
  *   - ghost: transparent, hover suave (toolbar/inline)
  *   - destructive: error fill (delete/cancel destrutivo)
@@ -33,6 +37,8 @@ const buttonVariants = cva(
           "bg-accent text-accent-foreground hover:bg-accent-hover shadow-xs",
         default:
           "bg-accent text-accent-foreground hover:bg-accent-hover shadow-xs",
+        spark:
+          "bg-[var(--color-spark)] text-[var(--color-spark-fg)] hover:brightness-95 shadow-[0_4px_16px_rgba(223,255,0,.30)]",
         secondary:
           "bg-surface-elevated text-text border border-border hover:border-accent hover:text-accent",
         outline:

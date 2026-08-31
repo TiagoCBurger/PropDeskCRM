@@ -28,10 +28,10 @@ const CSS = fs.readFileSync(path.join(RAIZ, "app/globals.css"), "utf8");
  *
  * Copiar à mão criaria uma segunda fonte da verdade que envelhece em silêncio: quem
  * mexesse na paleta do design system veria este teste verde contra a paleta de ontem, e
- * a catraca deixaria de calibrar contra a régua. Lendo do arquivo, mudar a Sage quebra
+ * a catraca deixaria de calibrar contra a régua. Lendo do arquivo, mudar o accent quebra
  * este teste — que é exatamente o aviso que se quer.
  */
-function stopsSageDoCss(): string[] {
+function stopsDoAccentNoCss(): string[] {
   const raiz = CSS.slice(CSS.indexOf(":root"), CSS.indexOf('[data-theme="dark"]'));
   return GRAUS.map((g) => {
     const m = new RegExp(`--color-accent-${g}:\\s*(#[0-9a-f]{6})`, "i").exec(raiz);
@@ -86,18 +86,20 @@ describe("conversões de cor", () => {
 });
 
 describe("rampaDeSemente — catraca de calibração contra o design system", () => {
-  const esperados = stopsSageDoCss();
+  const esperados = stopsDoAccentNoCss();
 
   it("lê 11 stops distintos do globals.css (guarda de vacuidade)", () => {
     // Sem isto, um regex quebrado devolveria lista vazia e a comparação abaixo passaria
     // por não ter o que comparar — instrumento morto tem cara de teste verde.
     expect(esperados).toHaveLength(11);
     expect(new Set(esperados).size).toBe(11);
-    expect(esperados[K]).toBe("#506d48");
+    // Accent do design system importado (VibeFly) é o Ink — ver a nota grande em
+    // `app/globals.css` sobre por que o lime do design NÃO é o `--color-accent`.
+    expect(esperados[K]).toBe("#2c2920");
   });
 
-  it("reproduz os 11 stops Sage a partir de #506d48 com Δ ≤ 2/255 por canal", () => {
-    const derivada = rampaDeSemente("#506d48");
+  it("reproduz os 11 stops Ink a partir de #2c2920 com Δ ≤ 2/255 por canal", () => {
+    const derivada = rampaDeSemente("#2c2920");
     const distancias = esperados.map((esperado, i) => distanciaPorCanal(esperado, derivada[i]!));
     expect(
       Math.max(...distancias),
