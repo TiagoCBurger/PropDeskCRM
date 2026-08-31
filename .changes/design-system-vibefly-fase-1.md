@@ -1,7 +1,7 @@
 ---
 impacto: nada_mudou
 secao: alterado
-titulo: Novo visual (paleta e tipografia) — fase 1 de 2 do redesenho importado
+titulo: Novo visual (paleta e tipografia) — fase 1 do redesenho importado
 ---
 
 A aparência do produto muda (cores, tipografia, raios e sombras), mas nenhuma
