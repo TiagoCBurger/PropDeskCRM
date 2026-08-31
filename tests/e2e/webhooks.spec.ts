@@ -21,7 +21,7 @@ import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { test, expect, type Page, type Locator } from "@playwright/test";
+import { test, expect, type Page, type Locator, type APIRequestContext } from "@playwright/test";
 import { carregarEnvLocal } from "../../scripts/lib/env-de-teste";
 
 // Segue o dev server do harness (playwright.config webServer) — nunca hardcodar
@@ -87,6 +87,43 @@ async function selectFirstOption(page: Page, combobox: Locator): Promise<void> {
 // demais num run real; 15s dá folga sem mascarar uma falha genuína.
 async function expectToast(page: Page, text: string): Promise<void> {
   await expect(page.getByText(text)).toBeVisible({ timeout: 15_000 });
+}
+
+async function drenarEventLog(request: APIRequestContext, page: Page): Promise<void> {
+  const internalSecret = loadInternalSecret();
+  for (let i = 0; i < 3; i++) {
+    const drainRes = await request.post(`${APP_URL}/api/v1/cron/event-log-drain`, {
+      headers: { Authorization: `Bearer ${internalSecret}` },
+      timeout: 60_000,
+    });
+    expect(drainRes.ok()).toBeTruthy();
+    await page.waitForTimeout(700);
+  }
+}
+
+/** Drena até a API registrar uma run `success` — evita flake quando a PARTE_2
+ *  deixa o `event_log` cheio (follow-ups) e 3 ticks não alcançam o webhook. */
+async function esperarRunComSucesso(
+  request: APIRequestContext,
+  page: Page,
+  ruleName: string,
+): Promise<void> {
+  let encontrou = false;
+  for (let tentativa = 0; tentativa < 15 && !encontrou; tentativa++) {
+    await drenarEventLog(request, page);
+    const resposta = await request.get(`${APP_URL}/api/v1/automation-rules/runs?limit=50`);
+    expect(resposta.ok()).toBeTruthy();
+    const corpo = (await resposta.json()) as {
+      data: Array<{ automation_rules: { name: string } | null; status: string }>;
+    };
+    encontrou = corpo.data.some(
+      (r) => r.automation_rules?.name === ruleName && r.status === "success",
+    );
+  }
+  expect(
+    encontrou,
+    "a automação não registrou execução com status success — event_log ainda não drenou ou a regra não rodou",
+  ).toBe(true);
 }
 
 test.describe("webhooks & automações — fluxo completo", () => {
@@ -194,40 +231,18 @@ test.describe("webhooks & automações — fluxo completo", () => {
       const directBody = (await directRes.json()) as { data: { lead_id: string } };
       expect(directBody.data.lead_id).toBeTruthy();
 
-      // --- Step 6: drena o event_log (até 3 ticks — trigger legado duplica evento) ---
-      const internalSecret = loadInternalSecret();
-      for (let i = 0; i < 3; i++) {
-        // Batch de até 50 eventos pendentes, cada um com handlers que fazem
-        // vários round-trips de DB (e potencialmente WAHA/IA) — bem mais lento
-        // que uma ação de UI; timeout maior que o actionTimeout padrão do teste.
-        const drainRes = await request.post(`${APP_URL}/api/v1/cron/event-log-drain`, {
-          headers: { Authorization: `Bearer ${internalSecret}` },
-          timeout: 60_000,
-        });
-        expect(drainRes.ok()).toBeTruthy();
-        await page.waitForTimeout(700);
-      }
+      // --- Step 6: drena até o backend registrar sucesso (não só 3 ticks fixos) ---
+      await esperarRunComSucesso(request, page, RULE_NAME);
 
       // --- Step 7: aba Atividade mostra a run com sucesso ---
-      // A regra não tem condição — dispara tanto pro "Lead de Teste" (passo 3)
-      // quanto pro lead real (passo 5), logo pode haver 2 cards com esse nome;
-      // .first() basta pra confirmar que a automação rodou com sucesso.
       await page.getByRole("tab", { name: "Atividade" }).click();
       const runTitle = page.getByText(RULE_NAME, { exact: true }).first();
       const runCard = cardOf(runTitle);
-      let found = false;
-      for (let attempt = 0; attempt < 12; attempt++) {
-        if ((await runCard.count()) > 0 && (await runCard.getByText("Sucesso").count()) > 0) {
-          found = true;
-          break;
-        }
-        await page.getByRole("button", { name: "Atualizar" }).click();
-        await page.waitForTimeout(1000);
-      }
-      expect(found, "run da automação não apareceu com status Sucesso na aba Atividade").toBe(
-        true,
-      );
-      await expect(runCard.getByText("Sucesso")).toBeVisible();
+      await expect(
+        runTitle,
+        "a execução existe na API mas a aba Atividade não a mostra",
+      ).toBeVisible({ timeout: 20_000 });
+      await expect(runCard.getByText("Sucesso")).toBeVisible({ timeout: 15_000 });
 
       // --- Step 8: /app/pipelines/{pipelineId} mostra o card com a tag ---
       await page.goto(`${APP_URL}/app/pipelines/${pipelineId}`);
