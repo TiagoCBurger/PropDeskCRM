@@ -106,7 +106,9 @@ test.describe("a automação conta o que aconteceu de verdade", () => {
   // que este teste precisa aparece desabilitado na tela.
   //
   // Reexecutar é barato: o seed é idempotente pelo `waha_session_name` e
-  // reafirma `status='WORKING'` quando a linha já existe.
+  // reafirma `status='WORKING'` quando a linha já existe. Também grava janela
+  // 0–24h em `channel_knobs` — sem isso o CI fora de 7h–22h BRT adia o envio
+  // e a spec reprova pedindo "Falhou" quando o produto adia corretamente.
   test.beforeAll(() => {
     execFileSync("npx", ["tsx", "scripts/seed-e2e-numero-conectado.ts"], { stdio: "inherit" });
   });
