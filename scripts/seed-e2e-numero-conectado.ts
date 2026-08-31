@@ -83,6 +83,27 @@ async function main(): Promise<void> {
     id = (data as { id: string }).id;
   }
 
+  // Janela 0–24h no fuso do tenant: o default de produto é 7h–22h
+  // (`PACING_DEFAULTS`). O job `e2e-parte (2)` roda a qualquer hora UTC — medido
+  // em 2026-08-31 ~01:39 UTC = 22:39 BRT, fora da janela — e a automação de
+  // WhatsApp adia (`adiado` / "Aguardando envio") ANTES de tentar o WAHA morto.
+  // `automacao-diz-a-verdade.spec.ts` precisa do desfecho de FALHA de envio, não
+  // de adiamento por relógio.
+  const { error: knobsErr } = await admin.from("channel_knobs").upsert(
+    {
+      organization_id: orgId,
+      channel_session_id: id,
+      window_start_hour: 0,
+      window_end_hour: 24,
+      allow_sunday: true,
+      timezone: "America/Sao_Paulo",
+      throttle_ms: 1200,
+      jitter_max_ms: 800,
+    },
+    { onConflict: "organization_id,channel_session_id" },
+  );
+  if (knobsErr) throw new Error(`upsert channel_knobs: ${knobsErr.message}`);
+
   creds.numero_conectado = { channel_session_id: id };
   fs.writeFileSync(CREDS_PATH, JSON.stringify(creds, null, 2));
   console.log(`[seed] número conectado (WORKING): ${id}`);
