@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Object storage pluggable — Supabase Storage ou Cloudflare R2",
+    "subtitle": "uma porta, dois backends; R2 incompleto falha fechado; o operador liga pelo .env",
+    "output": "storage-objetos.html",
+    "quality_profile": "standard"
+  },
+  "lanes": [
+    { "id": "operador", "label": "Operador (VPS / CI / docs)" },
+    { "id": "porta", "label": "Porta (lib/storage)" },
+    { "id": "backend", "label": "Backends" },
+    { "id": "consumo", "label": "Quem lê e escreve" },
+    { "id": "volta", "label": "Laço de retorno" }
+  ],
+  "mainPath": [
+    "envkeys",
+    "porta",
+    "r2",
+    "mediapersist",
+    "inbox"
+  ],
+  "nodes": [
+    {
+      "id": "envkeys",
+      "lane": "operador",
+      "col": 0,
+      "type": "config",
+      "label": "STORAGE_BACKEND + R2_*",
+      "sublabel": "default supabase; r2 sem credencial NÃO cai no Storage"
+    },
+    {
+      "id": "runbook",
+      "lane": "operador",
+      "col": 1,
+      "type": "frontend",
+      "label": "runbook topologia-vps-supabase-cloud-r2",
+      "sublabel": "secrets GitHub, Cloud vs self-host, R2, Cursor env"
+    },
+    {
+      "id": "deployvps",
+      "lane": "operador",
+      "col": 2,
+      "type": "service",
+      "label": "job deploy-vps",
+      "sublabel": "skip verde sem VPS_HOST; senão SSH + update.sh"
+    },
+    {
+      "id": "updatesh",
+      "lane": "operador",
+      "col": 3,
+      "type": "service",
+      "label": "hostgator-setup-kit/update.sh",
+      "sublabel": "maior tag v*; não constrói na VPS"
+    },
+    {
+      "id": "porta",
+      "lane": "porta",
+      "col": 1,
+      "type": "lib",
+      "label": "objectStorage(bucket)",
+      "sublabel": "lib/storage/index.ts — único call site de produção"
+    },
+    {
+      "id": "supabase",
+      "lane": "backend",
+      "col": 0,
+      "type": "cloud",
+      "label": "portaSupabase",
+      "sublabel": "createAdminClient().storage.from — default"
+    },
+    {
+      "id": "r2",
+      "lane": "backend",
+      "col": 1,
+      "type": "cloud",
+      "label": "portaR2 (SigV4)",
+      "sublabel": "sem @aws-sdk; URL pré-assinada sem o secret na query"
+    },
+    {
+      "id": "fechada",
+      "lane": "volta",
+      "col": 0,
+      "type": "service",
+      "label": "portaFechada",
+      "sublabel": "r2 selecionado e incompleto — { error }, não supabase"
+    },
+    {
+      "id": "postgres",
+      "lane": "consumo",
+      "col": 0,
+      "type": "table",
+      "label": "paths no Postgres",
+      "sublabel": "{org}/… — sem migration; o backend não mora na linha"
+    },
+    {
+      "id": "mediapersist",
+      "lane": "consumo",
+      "col": 1,
+      "type": "service",
+      "label": "media-persist / derive workers",
+      "sublabel": "whatsapp-media"
+    },
+    {
+      "id": "inbox",
+      "lane": "consumo",
+      "col": 2,
+      "type": "route",
+      "label": "URLs assinadas da inbox",
+      "sublabel": "messages/[id]/media · conversations/media"
+    },
+    {
+      "id": "logo",
+      "lane": "consumo",
+      "col": 3,
+      "type": "lib",
+      "label": "urlPublicaDoLogo",
+      "sublabel": "R2_PUBLIC_BASE_URL; sem ela cai em APP_LOGO_URL"
+    },
+    {
+      "id": "logger",
+      "lane": "volta",
+      "col": 1,
+      "type": "service",
+      "label": "logger.error [storage]",
+      "sublabel": "nomes das chaves que faltam — nunca o valor"
+    }
+  ],
+  "edges": [
+    { "id": "e1", "from": "envkeys", "to": "porta", "label": "lê na hora da chamada" },
+    { "id": "e2", "from": "runbook", "to": "envkeys", "label": "o operador preenche" },
+    { "id": "e3", "from": "runbook", "to": "deployvps", "label": "lista de secrets" },
+    { "id": "e4", "from": "deployvps", "to": "updatesh", "label": "SSH quando ligado" },
+    { "id": "e5", "from": "porta", "to": "supabase", "label": "default / typo" },
+    { "id": "e6", "from": "porta", "to": "r2", "label": "STORAGE_BACKEND=r2 completo" },
+    { "id": "e7", "from": "porta", "to": "fechada", "label": "r2 incompleto" },
+    { "id": "e8", "from": "fechada", "to": "logger", "label": "uma vez por processo" },
+    { "id": "e9", "from": "logger", "to": "runbook", "label": "o que o operador procura" },
+    { "id": "e10", "from": "mediapersist", "to": "porta", "label": "upload/download" },
+    { "id": "e11", "from": "inbox", "to": "porta", "label": "createSignedUrl" },
+    { "id": "e12", "from": "logo", "to": "porta", "label": "chave pública = a da porta" },
+    { "id": "e13", "from": "supabase", "to": "postgres", "label": "path gravado, bytes no Storage" },
+    { "id": "e14", "from": "r2", "to": "postgres", "label": "mesmo path; bytes no R2" },
+    { "id": "e15", "from": "postgres", "to": "inbox", "label": "media_storage_path" },
+    { "id": "e16", "from": "updatesh", "to": "envkeys", "label": "a VPS lê o .env" },
+    { "id": "e17", "from": "envkeys", "to": "logo", "label": "R2_PUBLIC_BASE_URL no browser" },
+    { "id": "e18", "from": "fechada", "to": "inbox", "label": "assinatura devolve error" },
+    { "id": "e19", "from": "mediapersist", "to": "postgres", "label": "grava media_storage_path" }
+  ]
+}

@@ -251,6 +251,19 @@ Se a regra não está escrita, diga que não está e pergunte — não preencha 
 suposição plausível. Ao documentar, marque o que é `CONFIRMADO` (provado por código) e o
 que é `INFERIDO`.
 
+## Cursor Cloud specific instructions
+
+Este ambiente (`scripts/cloud-agent-setup.sh` + `.cursor/environment.json`) é de
+**desenvolvimento**. Node 22 (`.nvmrc`) e pnpm via `packageManager`. O `install`
+gera `.env.local` com placeholders se o arquivo ainda não existir; **não** cola
+secrets. `pnpm dev` vive em `terminals`, não em `start`: sem banco real um
+`start` que falha derruba o boot do agente.
+
+Para apontar a um projeto **Supabase Cloud** ou ligar **R2**, use os Secrets do
+painel do ambiente (os nomes são os de `lib/env.ts` / `.env.example`). Nunca
+grave chave em `environment.json`. Runbook:
+[`docs/runbooks/topologia-vps-supabase-cloud-r2.md`](docs/runbooks/topologia-vps-supabase-cloud-r2.md).
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

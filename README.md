@@ -6,8 +6,9 @@
 
 > **Fork independente** do [DeskcommCRM](https://github.com/melgarafael/DeskcommCRM), mantido em
 > [`TiagoCBurger/PropDeskCRM`](https://github.com/TiagoCBurger/PropDeskCRM). Mesma base open source
-> (MIT), com roadmap próprio — incluindo migração de storage para **Cloudflare R2**
-> ([plano](docs/roadmap/migracao-storage-r2.md)).
+> (MIT), com roadmap próprio — a porta de storage para **Cloudflare R2** já
+> existe (`STORAGE_BACKEND=r2`); dual-write e backfill ainda não.
+> ([plano](docs/roadmap/migracao-storage-r2.md) · [runbook](docs/runbooks/topologia-vps-supabase-cloud-r2.md)).
 
 **Agentes de IA que atendem, qualificam e vendem no WhatsApp — dentro de um CRM open source rodando no seu servidor.**
 **Sem mensalidade, sem feature travada, seus dados com você. A alternativa aberta a Kommo, Octadesk e Intercom.**
@@ -376,6 +377,7 @@ Entre os invariantes está o **teste de isolamento RLS**: cria 2 organizações,
 | [`docs/white-label.md`](docs/white-label.md) | **Instalar para clientes** — trocar a marca, uma instalação por cliente vs compartilhada, revenda |
 | [`docs/runbooks/waha-hostgator.md`](docs/runbooks/waha-hostgator.md) | Runbook de WAHA em produção (dimensionamento, recuperação) |
 | [`docs/runbooks/deploy.md`](docs/runbooks/deploy.md) | Deploy em produção |
+| [`docs/runbooks/topologia-vps-supabase-cloud-r2.md`](docs/runbooks/topologia-vps-supabase-cloud-r2.md) | VPS + Supabase Cloud + R2 + deploy GitHub (opt-in) |
 | [`CLAUDE.md`](CLAUDE.md) | Convenções não-negociáveis (leitura obrigatória pra contribuir) |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Visão de 1 página da arquitetura |
 | [`docs/index.md`](docs/index.md) | Índice dos 157 documentos, com regra de precedência |
@@ -403,6 +405,9 @@ pnpm test:db   # precisa de Docker — é o job `invariants`, obrigatório no me
 git commit -m "feat(escopo): descrição"
 # abre PR — o template já traz o checklist de Definition of Done
 ```
+
+PR para `main` dispara os checks obrigatórios. Merge publica as imagens no GHCR.
+Deploy SSH na VPS é **opt-in** (secrets `VPS_*`); sem eles o job `deploy-vps` sai verde. Detalhe: [`docs/runbooks/topologia-vps-supabase-cloud-r2.md`](docs/runbooks/topologia-vps-supabase-cloud-r2.md).
 
 Essas duas linhas são **tudo o que dá para rodar na sua máquina**, de propósito: rodar só metade e
 descobrir o resto como surpresa vermelha depois de horas de espera é a pior primeira experiência
@@ -441,7 +446,7 @@ Pra **vulnerabilidades de segurança**, **NÃO abra issue pública** — use o [
 
 ### 🔮 Próximo
 
-- **Storage em Cloudflare R2** — migrar mídia WhatsApp, exports LGPD, assets de skills e logos de marca para R2 (S3-compatível), reduzindo dependência do Supabase Storage e melhorando custo/escala. Plano: [`docs/roadmap/migracao-storage-r2.md`](docs/roadmap/migracao-storage-r2.md).
+- **Storage em Cloudflare R2 (backfill)** — dual-write e cópia dos objetos já no Supabase Storage. A porta já existe (`STORAGE_BACKEND=r2`). Plano: [`docs/roadmap/migracao-storage-r2.md`](docs/roadmap/migracao-storage-r2.md).
 - **MCP público** — capabilities do CRM expostas pro ecossistema de agentes: plugue o agente que quiser e ele opera o Deskcomm.
 - **Templates por nicho** — pipelines e vocabulários prontos pra clínica, imobiliária, infoproduto e serviços (e-commerce já entregue).
 - **Integrações** — VTEX e Shopify via adapter pattern (Nuvemshop já entregue).

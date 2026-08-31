@@ -18,7 +18,8 @@ O **PropDeskCRM** ([`TiagoCBurger/PropDeskCRM`](https://github.com/TiagoCBurger/
 **fork independente** do DeskcommCRM original ([`melgarafael/DeskcommCRM`](https://github.com/melgarafael/DeskcommCRM)),
 desvinculado da rede de forks em 2026-08. Mantemos compatibilidade com a base open source (MIT)
 e evoluímos com prioridades próprias — a primeira declarada é **migrar o storage de binários para
-Cloudflare R2** ([`docs/roadmap/migracao-storage-r2.md`](docs/roadmap/migracao-storage-r2.md)),
+Cloudflare R2** ([`docs/roadmap/migracao-storage-r2.md`](docs/roadmap/migracao-storage-r2.md);
+a porta já existe, dual-write/backfill ainda não),
 mantendo Postgres/Auth/Realtime no Supabase.
 
 O projeto nasceu em 2026 como um CRM operacional para **e-commerce brasileiro** — WhatsApp via WAHA, integração Nuvemshop, LGPD nativa. Quando abrimos o código, a comunidade decidiu outra coisa: a maioria dos adopters passou a rodar o Deskcomm em **clínicas, infoprodutos, imobiliárias, agências e prestadores de serviço** — qualquer negócio que vende conversando.
@@ -47,7 +48,7 @@ Os pedidos de feature dessa comunidade empurraram o produto na direção que hoj
 | **WhatsApp-native** | WAHA multi-número, anti-banimento, mídia, STOP detection — o canal onde o Brasil vende |
 | **Multi-nicho por design** | `vocabulary` configurável por pipeline (lead = Cliente/Paciente/Comprador; won = Pago/Agendado/Fechado) — o mesmo core serve e-commerce, clínica, imobiliária, infoproduto |
 | **Self-hosted de verdade** | Seus dados na sua VPS, kit de instalação com 1 comando, `baseline.sql` auto-curativo, atualização com 1 script |
-| **Storage escalável (roadmap)** | Migração planejada para Cloudflare R2 — custo/egress previsível para mídia e exports |
+| **Storage escalável (R2 opcional)** | Porta `STORAGE_BACKEND=r2` no código; dual-write e backfill ainda no roadmap |
 | **Compliance nativo** | Multi-tenant com RLS testada em CI, LGPD by-design (redact, data_request, anonimização), audit append-only |
 
 ## Posicionamento
