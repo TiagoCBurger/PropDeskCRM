@@ -31,7 +31,7 @@ import { test, expect } from "@playwright/test";
 const RAIZ = path.resolve(__dirname, "../..");
 
 // Login + duas travessias da Agenda + troca de organização.
-test.describe.configure({ timeout: 150_000 });
+test.describe.configure({ timeout: 240_000 });
 
 interface DuasOrgs {
   org_a_id: string;
@@ -91,10 +91,14 @@ async function tiposOferecidos(page: import("@playwright/test").Page): Promise<s
 }
 
 async function trocarPara(page: import("@playwright/test").Page, orgId: string, nome: string) {
-  await page.getByTestId("tenant-switcher").click();
+  const seletor = page.getByTestId("tenant-switcher");
+  await expect(
+    seletor,
+    "o usuário precisa de duas organizações visíveis no seletor — rode `scripts/seed-e2e-duas-organizacoes.ts`",
+  ).toBeVisible({ timeout: 20_000 });
+  await seletor.click();
   await page.getByTestId(`tenant-switcher-item-${orgId}`).click();
   if (nome) {
-    const seletor = page.getByTestId("tenant-switcher");
     // ESPERAR A TRANSIÇÃO TERMINAR ANTES DE LER O TEXTO. A troca é uma server
     // action dentro de `useTransition`, e enquanto ela roda o botão fica
     // `disabled` mostrando o nome ANTIGO. Ler o texto nesse meio-tempo mede a

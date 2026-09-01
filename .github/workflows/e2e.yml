@@ -89,7 +89,7 @@ jobs:
       # uma rodada por parte.
       fail-fast: false
       matrix:
-        parte: [1, 2]
+        parte: [1, 2, 3]
     # ─────────────────────────────────────────────────────────────────────────
     # A COBERTURA DEIXA DE SER PROSA DIGITADA À MÃO.
     #
@@ -247,34 +247,48 @@ jobs:
       # Se um dia uma spec de follow-up entrar na PARTE_1 com nome depois de
       # `relogio-`, é aqui que se olha: ou ela vai para a PARTE_2, ou esta vai.
       SPECS_PARTE_2: >-
-        agente-marca-consulta.spec.ts agenda-marcar-pela-tela.spec.ts agenda-remarcar-e-cancelar.spec.ts
-        agenda-tipos-de-agendamento.spec.ts agenda-grade-interativa.spec.ts
-        agente-novo-e-uso.spec.ts agente-organiza-operacao.spec.ts
-        central-de-avisos-capacidades.spec.ts escalacao-ciclo.spec.ts
-        navegacao.spec.ts olhar-telas-do-epico.spec.ts pipelines-gestao.spec.ts
-        qa-agente-usa-as-maos.spec.ts qa-selo-no-funil-usado.spec.ts
-        qa-telas-descobertas-w4.spec.ts retorno-anti-morte.spec.ts
-        followup-builder.spec.ts followup-queue.spec.ts
-        distribuicao-atendimento.spec.ts followup-journey.spec.ts
-        webhooks.spec.ts
-        capacidades-do-agente.spec.ts
-        escopo-de-funil-do-agente.spec.ts
-        followup-dossie.spec.ts followup-tempo-adaptativo.spec.ts
-        gatilho-de-etapa.spec.ts gatilho-de-caso.spec.ts
-        marca-logo.spec.ts
-        historico-de-captacao.spec.ts
-        automacao-diz-a-verdade.spec.ts
-        inbox-quem-manda.spec.ts
         acervo-de-conhecimento.spec.ts
-        agenda-conectar-google.spec.ts
-        agenda-painel-cabe-na-tela.spec.ts
-        agenda-ver-na-agenda.spec.ts
-        agenda-escopo-da-organizacao.spec.ts
-        troca-de-organizacao-tem-volta.spec.ts
         agenda-caminho-ate-os-horarios.spec.ts
+        agenda-conectar-google.spec.ts
+        agenda-escopo-da-organizacao.spec.ts
         agenda-google-volta-do-consentimento.spec.ts
         agenda-google-volta-nao-desloga.spec.ts
+        agenda-grade-interativa.spec.ts
+        agenda-marcar-pela-tela.spec.ts
+        agenda-painel-cabe-na-tela.spec.ts
+        agenda-remarcar-e-cancelar.spec.ts
+        agenda-tipos-de-agendamento.spec.ts
+        agenda-ver-na-agenda.spec.ts
+        agente-marca-consulta.spec.ts
+        agente-novo-e-uso.spec.ts
+        agente-organiza-operacao.spec.ts
+        automacao-diz-a-verdade.spec.ts
+        capacidades-do-agente.spec.ts
+        central-de-avisos-capacidades.spec.ts
+        distribuicao-atendimento.spec.ts
+        escalacao-ciclo.spec.ts
+      SPECS_PARTE_3: >-
+        escopo-de-funil-do-agente.spec.ts
+        followup-builder.spec.ts
+        followup-dossie.spec.ts
+        followup-journey.spec.ts
+        followup-queue.spec.ts
+        followup-tempo-adaptativo.spec.ts
+        gatilho-de-caso.spec.ts
+        gatilho-de-etapa.spec.ts
+        historico-de-captacao.spec.ts
         i18n-espanhol-na-tela.spec.ts
+        inbox-quem-manda.spec.ts
+        marca-logo.spec.ts
+        navegacao.spec.ts
+        olhar-telas-do-epico.spec.ts
+        pipelines-gestao.spec.ts
+        qa-agente-usa-as-maos.spec.ts
+        qa-selo-no-funil-usado.spec.ts
+        qa-telas-descobertas-w4.spec.ts
+        retorno-anti-morte.spec.ts
+        troca-de-organizacao-tem-volta.spec.ts
+        webhooks.spec.ts
       # Cada item aqui tem o motivo MEDIDO, não presumido — e o gate cobra que a
       # lista exista e some com as outras duas.
       #
@@ -593,6 +607,8 @@ jobs:
           pnpm exec tsx --env-file=.env.local scripts/seed-e2e-capacidades-ausentes.ts
           pnpm exec tsx scripts/seed-e2e-followup-agent.ts
           pnpm exec tsx scripts/seed-e2e-agenda.ts
+          pnpm exec tsx scripts/seed-e2e-duas-organizacoes.ts
+          pnpm exec tsx scripts/seed-e2e-funis.ts
           # O catálogo da OpenRouter não existe em banco fresco (o baseline
           # semeia só anthropic/openai/google; os demais vêm do cron diário, que
           # busca na internet). Sem esta linha, `prova-painel-provedores` mede a
@@ -630,14 +646,16 @@ jobs:
       # workers, dois specs gerando o mesmo código no mesmo intervalo de 30s
       # fazem o segundo ser recusado como replay. Foi o que derrubava a
       # `reset-password-mfa` (issue #80): ela passa sozinha e falha em paralelo.
-      - name: E2E — parte ${{ matrix.parte }} de 2
+      - name: E2E — parte ${{ matrix.parte }} de 3
         run: |
           set -euo pipefail
-          # A lista sai da matrix, e as duas variáveis continuam existindo no
+          # A lista sai da matrix, e as três variáveis continuam existindo no
           # `env:` do job porque é DELAS que `e2e-cobertura-completa.test.ts` lê
           # a cobertura. Ler por indireção aqui e não duplicar a lista mantém
           # UMA fonte por parte.
-          if [ "${{ matrix.parte }}" = "1" ]; then LISTA="$SPECS_PARTE_1"; else LISTA="$SPECS_PARTE_2"; fi
+          if [ "${{ matrix.parte }}" = "1" ]; then LISTA="$SPECS_PARTE_1"
+          elif [ "${{ matrix.parte }}" = "2" ]; then LISTA="$SPECS_PARTE_2"
+          else LISTA="$SPECS_PARTE_3"; fi
           # Falha alto se a variável vier vazia: sem isto, um typo no nome faria
           # o playwright rodar a suíte INTEIRA (ou nenhuma) e o job ficaria
           # verde medindo outra coisa.
@@ -708,7 +726,7 @@ jobs:
           bloco() { sed -n "/^      $1: >-/,/^      [A-Z_0-9]*:/p" .github/workflows/e2e.yml \
                     | grep -oE "[a-z0-9-]+\.spec\.ts" | sort -u; }
           NO_DISCO=$(ls tests/e2e/*.spec.ts | wc -l | tr -d " ")
-          RODOU=$( { bloco SPECS_PARTE_1; bloco SPECS_PARTE_2; } | sort -u | wc -l | tr -d " ")
+          RODOU=$( { bloco SPECS_PARTE_1; bloco SPECS_PARTE_2; bloco SPECS_PARTE_3; } | sort -u | wc -l | tr -d " ")
           FORA_LISTA=$(bloco FORA_DO_CI)
           FORA=$(echo "$FORA_LISTA" | grep -c . || true)
           # Falha alto se o recorte parou de casar: listas vazias fariam este
@@ -717,7 +735,7 @@ jobs:
           {
             echo "## E2E — cobertura deste job"
             echo ""
-            echo "**Rodou: ${RODOU} de ${NO_DISCO} specs**, em duas partes paralelas."
+            echo "**Rodou: ${RODOU} de ${NO_DISCO} specs**, em três partes paralelas."
             echo ""
             echo "**Não rodou (${FORA}):**"
             for s in $FORA_LISTA; do echo "- \`${s}\` — precisa de WAHA + Redis + Resend + Nuvemshop (P0 da doutrina de QA Visual)"; done
