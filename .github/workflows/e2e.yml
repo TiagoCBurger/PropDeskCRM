@@ -77,9 +77,10 @@ jobs:
   # O teto de 30 min FICA. Ele é o que denuncia a suíte crescendo de novo;
   # subi-lo seria trocar um vermelho honesto por um CI que demora mais a cada
   # mês sem ninguém perceber. Quando a parte 2 estoura o teto, o conserto é
-  # rebalancear as listas — medido em 2026-09-01: `agenda-kit-visual` (15 casos
-  # serial × 180s de teto cada) saiu da PARTE_2 para a PARTE_1, que terminou
-  # em ~13 min e tinha folga.
+  # rebalancear as listas — medido em 2026-09-01: `agenda-kit-visual` saiu da
+  # PARTE_2 para a PARTE_1 (~14 min); a PARTE_2 ainda estourou 30 min numa
+  # travada em `agenda-escopo-da-organizacao`, então a suíte virou TRÊS partes
+  # paralelas (20 + 21 specs nas partes 2 e 3).
   e2e-parte:
     runs-on: ubuntu-latest
     timeout-minutes: 30
