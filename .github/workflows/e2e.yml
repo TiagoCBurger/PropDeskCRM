@@ -183,6 +183,11 @@ jobs:
         agenda-kit-visual.spec.ts
         notificacoes-diz-o-que-falta.spec.ts
         relogio-http-cron-externo.spec.ts
+        acervo-de-conhecimento.spec.ts
+        agenda-caminho-ate-os-horarios.spec.ts
+        agenda-conectar-google.spec.ts
+        agenda-google-volta-do-consentimento.spec.ts
+        distribuicao-atendimento.spec.ts
       # ⚠️ A ORDEM DESTA LISTA NÃO DECIDE A ORDEM DE EXECUÇÃO. O Playwright
       # ordena os arquivos por CAMINHO, não pela ordem em que são passados na
       # linha de comando. Medido no run 31838253496: `marca-logo.spec.ts` estava
@@ -248,11 +253,7 @@ jobs:
       # Se um dia uma spec de follow-up entrar na PARTE_1 com nome depois de
       # `relogio-`, é aqui que se olha: ou ela vai para a PARTE_2, ou esta vai.
       SPECS_PARTE_2: >-
-        acervo-de-conhecimento.spec.ts
-        agenda-caminho-ate-os-horarios.spec.ts
-        agenda-conectar-google.spec.ts
         agenda-escopo-da-organizacao.spec.ts
-        agenda-google-volta-do-consentimento.spec.ts
         agenda-google-volta-nao-desloga.spec.ts
         agenda-grade-interativa.spec.ts
         agenda-marcar-pela-tela.spec.ts
@@ -266,7 +267,6 @@ jobs:
         automacao-diz-a-verdade.spec.ts
         capacidades-do-agente.spec.ts
         central-de-avisos-capacidades.spec.ts
-        distribuicao-atendimento.spec.ts
         escalacao-ciclo.spec.ts
       SPECS_PARTE_3: >-
         escopo-de-funil-do-agente.spec.ts
