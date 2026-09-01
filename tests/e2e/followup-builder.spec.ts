@@ -367,8 +367,12 @@ test.describe("followup flow builder — canvas visual (Task 6.2)", () => {
     await page.screenshot({ path: "test-results/followup-6.2-06-publish-422-anchored.png", fullPage: true });
 
     // 5. Fix: connect action→end.
-    await connectHandles(page, actionId, endId);
-    await expect(page.locator(".react-flow__edge")).toHaveCount(3);
+    await expect(async () => {
+      if ((await page.locator(".react-flow__edge").count()) < 3) {
+        await connectHandles(page, actionId, endId);
+      }
+      await expect(page.locator(".react-flow__edge")).toHaveCount(3);
+    }).toPass({ timeout: 15_000 });
 
     // 6. Publish for real — expect success + "Ativo" badge + toast.
     await page.getByTestId("publish-button").click();

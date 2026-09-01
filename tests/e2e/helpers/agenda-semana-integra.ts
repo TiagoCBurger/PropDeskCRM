@@ -147,6 +147,11 @@ export async function diasDesenhados(page: Page): Promise<string[]> {
  * a semana seguinte inteira pode cair no mês seguinte — e nenhum dia de agosto
  * fica `data-disponivel="true"`. Sem avançar o mês ANTES de falhar, as specs
  * acusam o seed quando o defeito é só calendário (medido em 2026-08-31).
+ *
+ * No dia 1 do mês o inverso também morde: a consulta ainda não pintou setembro
+ * como disponível, `mes-seguinte` já nasce desabilitado (a janela de 30 dias
+ * não ultrapassa outubro), e um clique cego no botão mudo consome o timeout
+ * inteiro do caso — medido no CI de 2026-09-01, runs 33471646898 e 33469179540.
  */
 async function garantirDiaClicavelNoPainel(page: Page, mensagemFalha: string): Promise<void> {
   const dias = () => page.locator('[data-testid^="dia-"][data-disponivel="true"]');
@@ -159,11 +164,36 @@ async function garantirDiaClicavelNoPainel(page: Page, mensagemFalha: string): P
     })
     .toBeGreaterThan(0);
 
-  if ((await dias().count()) === 0) {
-    await page.getByTestId("mes-seguinte").click();
-  }
+  await expect
+    .poll(
+      async () => {
+        if ((await dias().count()) > 0) return true;
+        const proximo = page.getByTestId("mes-seguinte");
+        if (await proximo.isEnabled()) {
+          await proximo.click();
+        }
+        return (await dias().count()) > 0;
+      },
+      {
+        timeout: 25_000,
+        message:
+          mensagemFalha +
+          " — nem o mês seguinte abriu dia (botão bloqueado ou consulta ainda em voo)",
+      },
+    )
+    .toBe(true);
 
-  await expect(dias().first(), mensagemFalha).toBeVisible({ timeout: 20_000 });
+  await expect(dias().first(), mensagemFalha).toBeVisible({ timeout: 5_000 });
+}
+
+/** Avança o mês no painel só quando o produto permite — nunca clica em botão mudo. */
+async function avancarMesNoPainelSeHabilitado(page: Page): Promise<void> {
+  const proximo = page.getByTestId("mes-seguinte");
+  await expect(
+    proximo,
+    "nenhum dia disponível e o mês seguinte está bloqueado — a janela de busca não alcança",
+  ).toBeEnabled({ timeout: 5_000 });
+  await proximo.click();
 }
 
 /**
@@ -195,7 +225,7 @@ export async function escolherDiaDesenhado(page: Page, dias: readonly string[]):
 
   let candidatos = await disponiveis();
   if (candidatos.length === 0) {
-    await page.getByTestId("mes-seguinte").click();
+    await avancarMesNoPainelSeHabilitado(page);
     await expect(
       page.locator('[data-testid^="dia-"][data-disponivel="true"]').first(),
       "nem o mês seguinte oferece dia — a janela de busca do painel é de 30 dias",
@@ -268,19 +298,28 @@ async function diasCheios(page: Page): Promise<string[]> {
       "dia clicável a coluna de horários nunca abre (o defeito ficaria invisível)",
   );
 
-  const cheios = await varrer();
-  if (cheios.length > 0) return cheios;
-
-  // Hoje é o último dia útil do mês visível: o próximo dia com jornada cai no
-  // mês seguinte, e o mini-calendário só torna clicável o que é `isSameMonth` do
-  // mês em tela. Sem este passo as specs reprovariam nos dias 30/31 — a mesma
-  // classe de vermelho-por-calendário que este módulo existe para fechar.
-  await page.getByTestId("mes-seguinte").click();
-  await expect(
-    page.locator('[data-testid^="dia-"][data-disponivel="true"]').first(),
-    "nem o mês seguinte oferece dia — a janela de busca da tela é de 30 dias",
-  ).toBeVisible({ timeout: 20_000 });
-  return varrer();
+  let cheios: string[] = [];
+  await expect
+    .poll(
+      async () => {
+        cheios = await varrer();
+        if (cheios.length > 0) return true;
+        const proximo = page.getByTestId("mes-seguinte");
+        if (await proximo.isEnabled()) {
+          await proximo.click();
+        }
+        cheios = await varrer();
+        return cheios.length > 0;
+      },
+      {
+        timeout: 25_000,
+        message:
+          "nenhum dia FUTURO disponível — sem um dia com a jornada inteira, a contagem de " +
+          "horários volta a depender da hora em que a suíte roda",
+      },
+    )
+    .toBe(true);
+  return cheios;
 }
 
 function exigirDia(cheios: readonly string[], qual: string): string {
