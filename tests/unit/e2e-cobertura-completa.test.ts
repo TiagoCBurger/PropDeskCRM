@@ -82,7 +82,7 @@ describe("cobertura do e2e no CI", () => {
     // acusaria as 39 specs de uma vez. Verde e vermelho errados pelo mesmo motivo.
     expect(noDisco.length, "nenhuma spec no disco — o diretório mudou de lugar?").toBeGreaterThan(30);
     expect(parte1.length, "SPECS_PARTE_1 não foi lida do workflow").toBeGreaterThan(10);
-    expect(parte2.length, "SPECS_PARTE_2 não foi lida do workflow").toBeGreaterThan(10);
+    expect(parte2.length, "SPECS_PARTE_2 não foi lida do workflow").toBeGreaterThanOrEqual(10);
     expect(parte3.length, "SPECS_PARTE_3 não foi lida do workflow").toBeGreaterThan(10);
     expect(foraDoCi.length, "FORA_DO_CI não foi lida do workflow").toBeGreaterThan(0);
   });

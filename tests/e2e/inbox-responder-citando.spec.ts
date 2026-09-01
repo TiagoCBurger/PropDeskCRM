@@ -110,6 +110,12 @@ test.describe("responder citando", () => {
   test.beforeAll(() => {
     c = creds();
     fila = semearConversa();
+  });
+
+  test.beforeEach(() => {
+    // A mensagem é semeada de novo a cada caso: o `beforeAll` rodava ~10 min
+    // antes do teste no CI (parte 1 inchada), e outras specs da mesma parte
+    // podem ter tocado a conversa — sem reentrega o corpo some da tela.
     chegarMensagem(fila.conversation_id, CORPO_MENSAGEM);
   });
 
