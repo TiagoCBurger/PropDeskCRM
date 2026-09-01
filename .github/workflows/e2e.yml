@@ -254,10 +254,7 @@ jobs:
       # Se um dia uma spec de follow-up entrar na PARTE_1 com nome depois de
       # `relogio-`, é aqui que se olha: ou ela vai para a PARTE_2, ou esta vai.
       SPECS_PARTE_2: >-
-        agenda-google-volta-nao-desloga.spec.ts
-        agenda-marcar-pela-tela.spec.ts
         agenda-painel-cabe-na-tela.spec.ts
-        agenda-remarcar-e-cancelar.spec.ts
         agenda-tipos-de-agendamento.spec.ts
         agenda-ver-na-agenda.spec.ts
         agente-marca-consulta.spec.ts
@@ -290,6 +287,9 @@ jobs:
         agenda-grade-interativa.spec.ts
         capacidades-do-agente.spec.ts
         agente-novo-e-uso.spec.ts
+        agenda-google-volta-nao-desloga.spec.ts
+        agenda-marcar-pela-tela.spec.ts
+        agenda-remarcar-e-cancelar.spec.ts
       # Cada item aqui tem o motivo MEDIDO, não presumido — e o gate cobra que a
       # lista exista e some com as outras duas.
       #

@@ -4,6 +4,10 @@ import * as path from "node:path";
 
 import { test, expect, type Page } from "@playwright/test";
 
+// Sem teto explícito, uma navegação cross-site presa consome o job inteiro em
+// silêncio — medido na parte 2 do CI (run 33469179540).
+test.use({ navigationTimeout: 45_000, actionTimeout: 15_000 });
+
 /**
  * VOLTAR DO CONSENTIMENTO NÃO DESLOGA — e o teste segue o DESFECHO, não o header.
  *
