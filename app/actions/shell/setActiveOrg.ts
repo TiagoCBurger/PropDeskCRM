@@ -12,6 +12,8 @@ export async function setActiveOrg(orgId: string): Promise<{ ok: boolean; error?
     return { ok: false, error: "forbidden" };
   }
   const store = await cookies();
+  const atual = store.get("active_org")?.value;
+  if (atual === orgId) return { ok: true };
   store.set("active_org", orgId, {
     httpOnly: true,
     sameSite: "strict",
