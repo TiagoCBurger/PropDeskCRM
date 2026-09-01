@@ -32,7 +32,12 @@ export function TenantSwitcher() {
           <DropdownMenuItem
             key={org.organization_id}
             data-testid={`tenant-switcher-item-${org.organization_id}`}
-            onClick={() => startTransition(async () => { await setActiveOrg(org.organization_id); })}
+            onClick={() => {
+              if (active?.orgId === org.organization_id) return;
+              startTransition(async () => {
+                await setActiveOrg(org.organization_id);
+              });
+            }}
             className="flex items-center justify-between"
           >
             <span className="truncate">{org.organization_name}</span>

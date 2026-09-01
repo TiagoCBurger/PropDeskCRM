@@ -103,15 +103,14 @@ async function drenarEventLog(request: APIRequestContext, page: Page): Promise<v
 
 /** Drena até a API registrar uma run `success` — evita flake quando a PARTE_2
  *  deixa o `event_log` cheio (follow-ups) e 3 ticks não alcançam o webhook. */
-async function esperarRunComSucesso(
-  request: APIRequestContext,
-  page: Page,
-  ruleName: string,
-): Promise<void> {
+async function esperarRunComSucesso(page: Page, ruleName: string): Promise<void> {
   let encontrou = false;
   for (let tentativa = 0; tentativa < 20 && !encontrou; tentativa++) {
-    await drenarEventLog(request, page);
-    const resposta = await request.get(`${APP_URL}/api/v1/automation-rules/runs?limit=50`);
+    await drenarEventLog(page.request, page);
+    // A rota exige sessão de manager — o `request` solto do fixture não leva
+    // cookies; `page.request` herda a sessão do login acima (mesmo padrão de
+    // `automacao-diz-a-verdade.spec.ts`).
+    const resposta = await page.request.get(`${APP_URL}/api/v1/automation-rules/runs?limit=50`);
     expect(resposta.ok()).toBeTruthy();
     const corpo = (await resposta.json()) as {
       data: Array<{ automation_rules: { name: string } | null; status: string }>;
@@ -232,7 +231,7 @@ test.describe("webhooks & automações — fluxo completo", () => {
       expect(directBody.data.lead_id).toBeTruthy();
 
       // --- Step 6: drena até o backend registrar sucesso (não só 3 ticks fixos) ---
-      await esperarRunComSucesso(request, page, RULE_NAME);
+      await esperarRunComSucesso(page, RULE_NAME);
 
       // --- Step 7: aba Atividade mostra a run com sucesso ---
       await page.getByRole("tab", { name: "Atividade" }).click();

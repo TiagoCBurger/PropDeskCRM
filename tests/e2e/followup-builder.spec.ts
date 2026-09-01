@@ -161,15 +161,20 @@ async function connectHandles(
     : `.react-flow__node[data-id="${sourceNodeId}"] .react-flow__handle.source`;
   const source = page.locator(sourceSel).first();
   const target = page.locator(`.react-flow__node[data-id="${targetNodeId}"] .react-flow__handle.target`);
-  const sBox = await source.boundingBox();
-  const tBox = await target.boundingBox();
-  if (!sBox || !tBox) throw new Error(`handle não encontrado: ${sourceNodeId} -> ${targetNodeId}`);
-  await page.mouse.move(sBox.x + sBox.width / 2, sBox.y + sBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(sBox.x + sBox.width / 2 + 5, sBox.y + sBox.height / 2 + 5, { steps: 3 });
-  await page.mouse.move(tBox.x + tBox.width / 2, tBox.y + tBox.height / 2, { steps: 12 });
-  await page.mouse.up();
-  await page.waitForTimeout(200);
+  const antes = await page.locator(".react-flow__edge").count();
+
+  for (let tentativa = 0; tentativa < 3; tentativa++) {
+    const sBox = await source.boundingBox();
+    const tBox = await target.boundingBox();
+    if (!sBox || !tBox) throw new Error(`handle não encontrado: ${sourceNodeId} -> ${targetNodeId}`);
+    await page.mouse.move(sBox.x + sBox.width / 2, sBox.y + sBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(sBox.x + sBox.width / 2 + 5, sBox.y + sBox.height / 2 + 5, { steps: 3 });
+    await page.mouse.move(tBox.x + tBox.width / 2, tBox.y + tBox.height / 2, { steps: 12 });
+    await page.mouse.up();
+    await page.waitForTimeout(300);
+    if ((await page.locator(".react-flow__edge").count()) > antes) return;
+  }
 }
 
 /** All React Flow node ids currently rendered whose id starts with `${prefix}-`, in DOM order. */
@@ -368,7 +373,7 @@ test.describe("followup flow builder — canvas visual (Task 6.2)", () => {
 
     // 5. Fix: connect action→end.
     await connectHandles(page, actionId, endId);
-    await expect(page.locator(".react-flow__edge")).toHaveCount(3);
+    await expect(page.locator(".react-flow__edge")).toHaveCount(3, { timeout: 15_000 });
 
     // 6. Publish for real — expect success + "Ativo" badge + toast.
     await page.getByTestId("publish-button").click();

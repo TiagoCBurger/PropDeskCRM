@@ -69,6 +69,7 @@ function listaDoWorkflow(yml: string, chave: string): string[] {
 const yml = readFileSync(WORKFLOW, "utf8");
 const parte1 = listaDoWorkflow(yml, "SPECS_PARTE_1");
 const parte2 = listaDoWorkflow(yml, "SPECS_PARTE_2");
+const parte3 = listaDoWorkflow(yml, "SPECS_PARTE_3");
 const foraDoCi = listaDoWorkflow(yml, "FORA_DO_CI");
 const noDisco = readdirSync(DIR_SPECS)
   .filter((f) => f.endsWith(".spec.ts"))
@@ -81,17 +82,18 @@ describe("cobertura do e2e no CI", () => {
     // acusaria as 39 specs de uma vez. Verde e vermelho errados pelo mesmo motivo.
     expect(noDisco.length, "nenhuma spec no disco — o diretório mudou de lugar?").toBeGreaterThan(30);
     expect(parte1.length, "SPECS_PARTE_1 não foi lida do workflow").toBeGreaterThan(10);
-    expect(parte2.length, "SPECS_PARTE_2 não foi lida do workflow").toBeGreaterThan(10);
+    expect(parte2.length, "SPECS_PARTE_2 não foi lida do workflow").toBeGreaterThanOrEqual(6);
+    expect(parte3.length, "SPECS_PARTE_3 não foi lida do workflow").toBeGreaterThan(10);
     expect(foraDoCi.length, "FORA_DO_CI não foi lida do workflow").toBeGreaterThan(0);
   });
 
   it("toda spec do disco está em exatamente uma lista", () => {
-    const declaradas = [...parte1, ...parte2, ...foraDoCi];
+    const declaradas = [...parte1, ...parte2, ...parte3, ...foraDoCi];
     const semLista = noDisco.filter((f) => !declaradas.includes(f));
     expect(
       semLista,
       "Spec no disco que não roda no CI nem está declarada como fora. Ponha em " +
-        "SPECS_PARTE_1/2 (se rodar sem WAHA/Redis/Resend) ou em FORA_DO_CI com o " +
+        "SPECS_PARTE_1/2/3 (se rodar sem WAHA/Redis/Resend) ou em FORA_DO_CI com o " +
         "motivo escrito. Cobertura parcial silenciosa se lê como cobertura total.\n",
     ).toEqual([]);
 
@@ -105,7 +107,7 @@ describe("cobertura do e2e no CI", () => {
     // O sentido inverso, e ele é pior: `playwright test naoexiste.spec.ts` não
     // acha nada e o job termina VERDE. Uma renomeação silenciosamente desliga a
     // cobertura daquele arquivo.
-    const fantasmas = [...parte1, ...parte2, ...foraDoCi].filter((f) => !noDisco.includes(f));
+    const fantasmas = [...parte1, ...parte2, ...parte3, ...foraDoCi].filter((f) => !noDisco.includes(f));
     expect(fantasmas, "lista do CI aponta para spec inexistente — renomeada ou apagada").toEqual([]);
   });
 
@@ -140,6 +142,7 @@ describe("cobertura do e2e no CI", () => {
     // deixaria passar um workflow onde `LISTA` nunca é atribuída.
     expect(yml, "SPECS_PARTE_1 não alimenta a variável que roda").toMatch(/LISTA="\$SPECS_PARTE_1"/);
     expect(yml, "SPECS_PARTE_2 não alimenta a variável que roda").toMatch(/LISTA="\$SPECS_PARTE_2"/);
+    expect(yml, "SPECS_PARTE_3 não alimenta a variável que roda").toMatch(/LISTA="\$SPECS_PARTE_3"/);
     expect(yml, "a lista escolhida não é passada ao Playwright").toMatch(
       /playwright test --workers=1 \$LISTA/,
     );
