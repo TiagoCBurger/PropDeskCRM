@@ -76,7 +76,10 @@ jobs:
   #
   # O teto de 30 min FICA. Ele é o que denuncia a suíte crescendo de novo;
   # subi-lo seria trocar um vermelho honesto por um CI que demora mais a cada
-  # mês sem ninguém perceber.
+  # mês sem ninguém perceber. Quando a parte 2 estoura o teto, o conserto é
+  # rebalancear as listas — medido em 2026-09-01: `agenda-kit-visual` (15 casos
+  # serial × 180s de teto cada) saiu da PARTE_2 para a PARTE_1, que terminou
+  # em ~13 min e tinha folga.
   e2e-parte:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -176,6 +179,7 @@ jobs:
         followup-linguagem.spec.ts followup-ramos.spec.ts
         wizard-do-funcionario.spec.ts mfa-opcional.spec.ts inbox-responder-citando.spec.ts
         agenda-tela-do-produto.spec.ts
+        agenda-kit-visual.spec.ts
         notificacoes-diz-o-que-falta.spec.ts
         relogio-http-cron-externo.spec.ts
       # ⚠️ A ORDEM DESTA LISTA NÃO DECIDE A ORDEM DE EXECUÇÃO. O Playwright
@@ -262,7 +266,6 @@ jobs:
         automacao-diz-a-verdade.spec.ts
         inbox-quem-manda.spec.ts
         acervo-de-conhecimento.spec.ts
-        agenda-kit-visual.spec.ts
         agenda-conectar-google.spec.ts
         agenda-painel-cabe-na-tela.spec.ts
         agenda-ver-na-agenda.spec.ts
