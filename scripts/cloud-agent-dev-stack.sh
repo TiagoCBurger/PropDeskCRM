@@ -74,11 +74,22 @@ ajusta_senhas() {
 }
 
 aplica_baseline_se_faltar() {
-  local tem_org tem_quadro
+  local tem_org tem_quadro check_provider
   tem_org="$(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -Atc \
     "select count(*) from information_schema.tables where table_schema='public' and table_name='organizations';" 2>/dev/null || echo 0)"
   tem_quadro="$(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -Atc \
     "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='fn_aplicar_quadro_do_onboarding';" 2>/dev/null || echo 0)"
+  # Volume antigo do supabase start ainda tem o CHECK que recusa OpenRouter.
+  check_provider="$(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -Atc \
+    "select count(*) from pg_constraint where conname='ai_provider_credentials_provider_check';" 2>/dev/null || echo 0)"
+
+  if [[ "$check_provider" != "0" && -f supabase/migrations/20260807140000_0127_provider_vocabulario_aberto.sql ]]; then
+    echo "[dev-stack] aplicando 0127 (vocabulário aberto de provedor)…"
+    docker exec -i supabase_db_deskcomm-crm psql -U supabase_admin -d postgres -v ON_ERROR_STOP=0 \
+      < supabase/migrations/20260807140000_0127_provider_vocabulario_aberto.sql >/dev/null \
+      || true
+    PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "notify pgrst, 'reload schema';" >/dev/null || true
+  fi
 
   # Ter `organizations` NÃO prova o schema do produto: um volume do
   # `supabase start` incompleto deixa tabelas e sem as funções do baseline.

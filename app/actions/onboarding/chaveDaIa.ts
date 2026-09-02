@@ -18,7 +18,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { guardarCredencial } from "@/lib/ai/credenciais/guardar";
+import { guardarCredencial, mensagemAoFalharGuardar } from "@/lib/ai/credenciais/guardar";
 import { IDS_DE_PROVEDOR } from "@/lib/ai/pontos/provedores";
 import type { Provider } from "@/lib/ai/provider-validators";
 import { requireOnboardingCtx, OnboardingError } from "./_shared";
@@ -62,17 +62,31 @@ export async function salvarChaveDaIa(formData: FormData): Promise<ResultadoDaCh
   });
 
   if (!r.ok) {
-    if (r.motivo === "label_em_uso") {
-      return {
-        ok: false,
-        erro: "Já existe uma chave cadastrada com esse nome. Veja em IA › Credenciais.",
-      };
-    }
-    return { ok: false, erro: "Não consegui guardar a chave agora. Tente de novo." };
+    return { ok: false, erro: mensagemAoFalharGuardar(r) };
   }
+
+  // Sem isto, a chave OpenRouter fica no cofre e o runtime continua lendo
+  // `settings.llm.provider = anthropic` (o default do trigger). O retrato e o
+  // agente procuram a chave do provedor errado.
+  await alinharProvedorDaOrg(ctx.orgId, provider);
 
   // O passo lê o retrato da instalação no servidor; sem invalidar, ele seguiria
   // dizendo que falta a chave que acabou de ser cadastrada.
   revalidatePath("/onboarding", "layout");
   return { ok: true, final: r.last4 };
+}
+
+async function alinharProvedorDaOrg(orgId: string, provider: string): Promise<void> {
+  const admin = createAdminClient();
+  const { data: org } = await admin.from("organizations").select("settings").eq("id", orgId).maybeSingle();
+  const settings = ((org as { settings?: Record<string, unknown> } | null)?.settings ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const llm = ((settings["llm"] as Record<string, unknown> | undefined) ?? {}) as Record<string, unknown>;
+  if (llm["provider"] === provider) return;
+  await admin
+    .from("organizations")
+    .update({ settings: { ...settings, llm: { ...llm, provider } } } as never)
+    .eq("id", orgId);
 }
