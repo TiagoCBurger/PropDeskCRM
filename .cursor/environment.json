@@ -1,6 +1,7 @@
 {
   "name": "DeskcommCRM",
   "install": "bash scripts/cloud-agent-setup.sh && pnpm install --frozen-lockfile",
+  "start": "bash scripts/cloud-agent-dev-stack.sh",
   "terminals": [
     {
       "name": "dev",

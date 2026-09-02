@@ -2,15 +2,16 @@
 # =============================================================================
 # Bootstrap idempotente do ambiente de DESENVOLVIMENTO (Cloud Agent / dev local).
 #
-#  1. Gera um `.env.local` MÍNIMO só se ele ainda não existir, com placeholders
-#     válidos e segredos LOCAIS descartáveis, para que `pnpm dev`/`pnpm build`
-#     subam sem erro fatal. NÃO substitui um `.env.local` já preenchido.
+#  1. Gera um `.env.local` MÍNIMO só se ele ainda não existir, com JWT demo do
+#     stack local do Supabase e segredos LOCAIS descartáveis, para que
+#     `pnpm dev` suba. NÃO substitui um `.env.local` já preenchido.
 #  2. Instala o Claude Code CLI (`claude`) se ainda não estiver no PATH —
 #     best-effort, nunca derruba o setup do projeto.
 #
-# Isto NÃO configura Supabase/WAHA/IA de verdade — para auth + banco reais,
-# preencha as chaves conforme `docs/SETUP.md`. É apenas o piso para o app
-# compilar, servir as telas públicas e responder a `/api/v1/health`.
+# Auth de verdade (GoTrue + PostgREST na :54321) sobe em
+# `scripts/cloud-agent-dev-stack.sh`, chamado pelo `start` do
+# `.cursor/environment.json`. Sem isso o /login da tela não autentica:
+# a URL aponta para 127.0.0.1:54321 e não há processo escutando.
 # =============================================================================
 set -euo pipefail
 
@@ -32,10 +33,10 @@ else
 # Para auth + banco reais, preencha as chaves conforme docs/SETUP.md.
 # =============================================================================
 
-# --- Supabase (placeholder local — troque por um projeto real p/ auth+DB) ----
+# --- Supabase local (JWT demo do stack oficial; o start sobe GoTrue na 54321) -
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=dev-placeholder-anon-key
-SUPABASE_SERVICE_ROLE_KEY=dev-placeholder-service-role-key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
 
 # --- Cron / interno ----------------------------------------------------------
 INTERNAL_SECRET=$(gen_hex 32)
