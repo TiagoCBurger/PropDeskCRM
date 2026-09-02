@@ -74,17 +74,29 @@ ajusta_senhas() {
 }
 
 aplica_baseline_se_faltar() {
-  local n
-  n="$(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -Atc \
+  local tem_org tem_quadro
+  tem_org="$(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -Atc \
     "select count(*) from information_schema.tables where table_schema='public' and table_name='organizations';" 2>/dev/null || echo 0)"
-  if [[ "$n" == "1" ]]; then
-    echo "[dev-stack] schema public já tem organizations — baseline ok."
+  tem_quadro="$(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -Atc \
+    "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='fn_aplicar_quadro_do_onboarding';" 2>/dev/null || echo 0)"
+
+  # Ter `organizations` NÃO prova o schema do produto: um volume do
+  # `supabase start` incompleto deixa tabelas e sem as funções do baseline.
+  # Medido no Cloud Agent em 2026-09-02: o onboarding falhava com
+  # "Could not find the function public.fn_aplicar_quadro_do_onboarding".
+  if [[ "$tem_org" == "1" && "$tem_quadro" != "0" ]]; then
+    echo "[dev-stack] schema do produto presente (organizations + quadro do onboarding)."
     return 0
   fi
   if [[ -f supabase/baseline.sql ]] && command -v psql >/dev/null 2>&1; then
     echo "[dev-stack] aplicando baseline.sql…"
     PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=0 -q -f supabase/baseline.sql \
       || echo "[dev-stack] aviso: baseline teve erros (comum em reaplicação)."
+  fi
+  if [[ -f supabase/migrations/20260813120000_0156_quadro_do_onboarding.sql ]]; then
+    docker exec -i supabase_db_deskcomm-crm psql -U supabase_admin -d postgres -v ON_ERROR_STOP=0 \
+      < supabase/migrations/20260813120000_0156_quadro_do_onboarding.sql >/dev/null \
+      || true
   fi
 }
 
