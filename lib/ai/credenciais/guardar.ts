@@ -46,6 +46,29 @@ export interface PedidoDeGuardar {
   requestId?: string;
 }
 
+/**
+ * A tela não pode devolver o SQL cru, mas também não pode mentir "tente de novo"
+ * quando o banco desta instalação ainda recusa OpenRouter (CHECK pré-0127).
+ */
+export function mensagemAoFalharGuardar(
+  r: Extract<ResultadoDeGuardar, { ok: false }>,
+): string {
+  if (r.motivo === "label_em_uso") {
+    return "Já existe uma chave cadastrada com esse nome. Veja em IA › Credenciais.";
+  }
+  if (r.motivo === "cifragem") {
+    return "Não consegui cifrar a chave nesta instalação. Quem instalou precisa conferir AI_CRED_AES_KEY.";
+  }
+  const detalhe = (r.detalhe ?? "").toLowerCase();
+  if (
+    detalhe.includes("ai_provider_credentials_provider_check") ||
+    (detalhe.includes("check constraint") && detalhe.includes("provider"))
+  ) {
+    return "Este banco ainda não aceita OpenRouter (nem outros provedores além de Anthropic, OpenAI e Google). Falta a atualização 0127 — quem instalou aplica com o update do produto.";
+  }
+  return "Não consegui guardar a chave agora. Tente de novo.";
+}
+
 export async function guardarCredencial(p: PedidoDeGuardar): Promise<ResultadoDeGuardar> {
   let encrypted;
   try {
