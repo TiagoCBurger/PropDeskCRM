@@ -4195,6 +4195,14 @@ export const DICIONARIO: Traducoes = {
   "Ela é baixada automaticamente uma vez por dia; depois disso, publique em": {
     es: "Se descarga automáticamente una vez al día; después de eso, publica en",
   },
+  "Tentei baixar a lista de modelos": { es: "Intenté descargar la lista de modelos" },
+  "agora e a origem não respondeu. Não é preciso esperar até amanhã — clique de novo em criar, ou publique depois em": {
+    es: "ahora y el origen no respondió. No hace falta esperar a mañana — vuelve a pulsar crear, o publica después en",
+  },
+  "Ainda não achei um modelo utilizável": { es: "Todavía no encontré un modelo usable" },
+  "Tente de novo neste mesmo passo — a lista baixa agora, não amanhã. Se persistir, publique em": {
+    es: "Inténtalo de nuevo en este mismo paso — la lista se descarga ahora, no mañana. Si sigue igual, publica en",
+  },
   "IA › Agentes": { es: "IA › Agentes" },
   "Seu agente foi criado, mas ficou como": { es: "Tu agente fue creado, pero quedó como" },
   "não consegui ler os números de WhatsApp desta instalação, então não dá pra dizer em qual número ele atenderia — e rascunho não responde mensagem.": {

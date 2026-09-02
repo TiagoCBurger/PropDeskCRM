@@ -8,10 +8,10 @@
  *
  * MEDIDO num ambiente real (400 modelos OpenRouter sincronizados, 333 com
  * suporte a ferramentas): NENHUM deles vem marcado como padrão, porque quem
- * traz o catálogo é o cron `sync-model-catalog` e ele não escreve esse campo.
- * Então o wizard dizia "esta instalação ainda não baixou a lista de modelos" —
- * uma frase falsa, já que a lista estava lá — e mandava esperar a atualização
- * diária, que nunca resolveria: no dia seguinte o catálogo continua sem padrão.
+ * traz o catálogo (`sincronizarCatalogo`) não escreve esse campo. Então o
+ * wizard dizia "esta instalação ainda não baixou a lista de modelos" — uma
+ * frase falsa quando a lista já estava lá, e um conselho pior quando não
+ * estava: esperar o cron de amanhã, que também não marca padrão.
  *
  * Quem instalou pela opção que o instalador chama de mais simples ficava com um
  * agente em rascunho para sempre, sem nenhum caminho que funcionasse.

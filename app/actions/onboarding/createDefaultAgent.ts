@@ -14,6 +14,8 @@ import { aiAgentDefaultSchema, type PromptTemplate } from "@/lib/schemas/onboard
 import { capacidadesPadraoDoOnboarding } from "@/lib/ai/agents/capacidades-padrao";
 import { publicarMemoriaDaOrg } from "@/lib/ai/memoria-da-org";
 import { escolherModeloDoProvedor } from "@/lib/ai/agents/escolher-modelo";
+import { sincronizarCatalogoComDedup } from "@/lib/ai/catalogo/executar";
+import { PROVEDOR_POR_ID } from "@/lib/ai/pontos/provedores";
 import { chaveDePlataforma } from "@/lib/ai/runtime/agent";
 import {
   requireOnboardingCtx,
@@ -85,7 +87,7 @@ type PublishOutcome =
        * trocar de provedor. Dizer "ainda não baixamos a lista" para quem já tem
        * 400 modelos é o conselho que nunca resolve.
        */
-      motivo: "catalogo_vazio" | "nenhum_com_ferramentas";
+      motivo: "catalogo_vazio" | "nenhum_com_ferramentas" | "sincronizacao_falhou";
     }
   | { published: false; reason: "failed"; message: string };
 
@@ -174,15 +176,33 @@ async function publishFirstVersion(
   // sincronizados e NENHUM marcado como padrão, porque o cron de catálogo não
   // escreve esse campo. A regra de escolha (com o requisito de ferramentas)
   // vive em `escolherModeloDoProvedor`.
-  const { data: modelos } = await admin
-    .from("ai_models")
-    .select("model_id, is_default_for_provider, supports_tools, input_price_per_million_cents, output_price_per_million_cents")
-    .eq("provider", provider)
-    .is("deprecated_at", null);
+  const lerModelos = async () => {
+    const { data: modelos } = await admin
+      .from("ai_models")
+      .select("model_id, is_default_for_provider, supports_tools, input_price_per_million_cents, output_price_per_million_cents")
+      .eq("provider", provider)
+      .is("deprecated_at", null);
+    return escolherModeloDoProvedor(
+      (modelos ?? []) as Parameters<typeof escolherModeloDoProvedor>[0],
+    );
+  };
 
-  const escolha = escolherModeloDoProvedor(
-    (modelos ?? []) as Parameters<typeof escolherModeloDoProvedor>[0],
-  );
+  let escolha = await lerModelos();
+  // Catálogo sincronizável (OpenRouter) NÃO espera o cron de amanhã. A lista
+  // é pública e baixa em segundos; mandar a pessoa esperar um dia era o
+  // conselho que deixava o atendente em rascunho no primeiro uso.
+  if (
+    !escolha.escolhido &&
+    escolha.motivo === "catalogo_vazio" &&
+    PROVEDOR_POR_ID.get(provider)?.catalogoSincronizavel
+  ) {
+    try {
+      await sincronizarCatalogoComDedup(admin);
+    } catch {
+      return { published: false, reason: "no_model", provider, motivo: "sincronizacao_falhou" };
+    }
+    escolha = await lerModelos();
+  }
   if (!escolha.escolhido) {
     return { published: false, reason: "no_model", provider, motivo: escolha.motivo };
   }
@@ -310,7 +330,7 @@ export type CreateAgentResult =
       publish_blocked_by?: "canal" | "modelo" | "chave";
       provider?: string;
       /** Catálogo vazio e catálogo sem modelo que sirva pedem conselhos opostos. */
-      motivo_do_modelo?: "catalogo_vazio" | "nenhum_com_ferramentas";
+      motivo_do_modelo?: "catalogo_vazio" | "nenhum_com_ferramentas" | "sincronizacao_falhou";
       /** As regras da casa não foram gravadas — o agente existe assim mesmo. */
       regras_nao_salvas?: string;
     }
@@ -479,10 +499,9 @@ export async function createDefaultAgent(formData: FormData): Promise<CreateAgen
     };
   }
 
-  // Mesma postura, outra causa: o provedor escolhido na instalação ainda não
-  // tem modelo no catálogo desta instalação (o da OpenRouter só chega no cron
-  // diário). Avançar calado deixaria a pessoa achar que o funcionário está no
-  // ar — e ele não responde uma única mensagem.
+  // Mesma postura, outra causa: não há modelo utilizável (catálogo vazio
+  // mesmo depois de baixar agora, ou nenhum com ferramentas). Avançar calado
+  // deixaria a pessoa achar que o funcionário está no ar.
   // Sem chave utilizável: o agente fica rascunho e a tela explica. Avançar
   // calado deixaria a pessoa achar que o funcionário está no ar.
   if (!publicacao.published && publicacao.reason === "sem_chave") {
