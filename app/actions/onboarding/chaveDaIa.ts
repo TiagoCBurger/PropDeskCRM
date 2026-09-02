@@ -19,7 +19,8 @@ import { revalidatePath } from "next/cache";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { guardarCredencial, mensagemAoFalharGuardar } from "@/lib/ai/credenciais/guardar";
-import { IDS_DE_PROVEDOR } from "@/lib/ai/pontos/provedores";
+import { sincronizarCatalogoComDedup } from "@/lib/ai/catalogo/executar";
+import { IDS_DE_PROVEDOR, PROVEDOR_POR_ID } from "@/lib/ai/pontos/provedores";
 import type { Provider } from "@/lib/ai/provider-validators";
 import { requireOnboardingCtx, OnboardingError } from "./_shared";
 
@@ -73,6 +74,14 @@ export async function salvarChaveDaIa(formData: FormData): Promise<ResultadoDaCh
   // O passo lê o retrato da instalação no servidor; sem invalidar, ele seguiria
   // dizendo que falta a chave que acabou de ser cadastrada.
   revalidatePath("/onboarding", "layout");
+
+  // A lista de modelos da OpenRouter é pública e precisa existir ANTES de o
+  // atendente nascer. Dispara em segundo plano: o toast de "chave guardada"
+  // não espera 400 linhas, e o clique em criar reusa a mesma ida (dedup).
+  if (PROVEDOR_POR_ID.get(provider)?.catalogoSincronizavel) {
+    void sincronizarCatalogoComDedup(createAdminClient()).catch(() => undefined);
+  }
+
   return { ok: true, final: r.last4 };
 }
 

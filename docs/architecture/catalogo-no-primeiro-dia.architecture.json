@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Catálogo de modelos no primeiro dia",
+    "subtitle": "o wizard baixa a lista na hora; o cron diário continua atualizando preço",
+    "output": "catalogo-no-primeiro-dia.html",
+    "quality_profile": "standard"
+  },
+  "lanes": [
+    { "id": "humano", "label": "O que o humano vê" },
+    { "id": "borda", "label": "Bordas" },
+    { "id": "regra", "label": "Regra" },
+    { "id": "dados", "label": "Banco" },
+    { "id": "mundo", "label": "Origem" }
+  ],
+  "mainPath": ["wizard", "action", "executar", "aimodels", "escolher"],
+  "nodes": [
+    { "id": "wizard", "lane": "humano", "col": 1, "type": "frontend", "label": "Onboarding › Treinar", "sublabel": "colar a chave + criar atendente" },
+    { "id": "aviso", "lane": "humano", "col": 2, "type": "frontend", "label": "Alerta de rascunho", "sublabel": "só se a origem falhar — tenta de novo agora, não amanhã" },
+    { "id": "agentes", "lane": "humano", "col": 3, "type": "frontend", "label": "IA › Agentes", "sublabel": "publicar depois se o clique falhar" },
+    { "id": "action", "lane": "borda", "col": 1, "type": "api", "label": "createDefaultAgent / salvarChaveDaIa", "sublabel": "baixa se o catálogo sincronizável está vazio" },
+    { "id": "cron", "lane": "borda", "col": 2, "type": "api", "label": "cron sync-model-catalog", "sublabel": "cadência diária de preço e modelo novo" },
+    { "id": "executar", "lane": "regra", "col": 1, "type": "service", "label": "sincronizarCatalogoComDedup", "sublabel": "uma ida à origem por vez" },
+    { "id": "plano", "lane": "regra", "col": 2, "type": "service", "label": "planejarSincronizacao", "sublabel": "não apaga; não pisa no source=manual" },
+    { "id": "escolher", "lane": "regra", "col": 3, "type": "service", "label": "escolherModeloDoProvedor", "sublabel": "curado, senão o mais barato COM ferramentas" },
+    { "id": "aimodels", "lane": "dados", "col": 1, "type": "database", "label": "ai_models", "sublabel": "global · source openrouter|manual" },
+    { "id": "origem", "lane": "mundo", "col": 1, "type": "external", "label": "GET openrouter.ai/api/v1/models", "sublabel": "público, sem chave" }
+  ],
+  "edges": [
+    { "id": "e1", "from": "wizard", "to": "action", "label": "Guardar a chave · Criar e continuar" },
+    { "id": "e2", "from": "action", "to": "executar", "label": "catálogo vazio e provedor sincronizável" },
+    { "id": "e3", "from": "executar", "to": "origem", "label": "fetch 20s" },
+    { "id": "e4", "from": "origem", "to": "executar", "label": "~400 modelos" },
+    { "id": "e5", "from": "executar", "to": "plano", "label": "o que gravar / depreciar / ressuscitar" },
+    { "id": "e6", "from": "plano", "to": "aimodels", "label": "upsert + deprecated_at" },
+    { "id": "e7", "from": "action", "to": "escolher", "label": "depois da baixa (ou se já havia lista)" },
+    { "id": "e8", "from": "escolher", "to": "aimodels", "label": "lê provider + não depreciados" },
+    { "id": "e9", "from": "escolher", "to": "wizard", "label": "publica a 1ª versão" },
+    { "id": "e10", "from": "action", "to": "aviso", "label": "origem muda → rascunho + tente de novo agora" },
+    { "id": "e11", "from": "aviso", "to": "agentes", "label": "porta de publicação se persistir" },
+    { "id": "e12", "from": "cron", "to": "executar", "label": "mesmo I/O do wizard" },
+    { "id": "e13", "from": "cron", "to": "aimodels", "label": "preço do dia seguinte" }
+  ]
+}

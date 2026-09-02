@@ -61,7 +61,7 @@ export function SetupAiForm({ capacidades, conferencias }: Props) {
   const [causa, setCausa] = useState<"canal" | "modelo" | "chave" | null>(null);
   const [provedor, setProvedor] = useState<string | null>(null);
   const [motivoDoModelo, setMotivoDoModelo] = useState<
-    "catalogo_vazio" | "nenhum_com_ferramentas" | null
+    "catalogo_vazio" | "nenhum_com_ferramentas" | "sincronizacao_falhou" | null
   >(null);
   const [regrasNaoSalvas, setRegrasNaoSalvas] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -277,10 +277,18 @@ export function SetupAiForm({ capacidades, conferencias }: Props) {
               )}{" "}
               <strong>{t("IA › Provedores")}</strong>.
             </p>
+          ) : motivoDoModelo === "sincronizacao_falhou" ? (
+            <p className="text-sm">
+              {t("Tentei baixar a lista de modelos")} {provedorLegivel(provedor, t)}{" "}
+              {t(
+                "agora e a origem não respondeu. Não é preciso esperar até amanhã — clique de novo em criar, ou publique depois em",
+              )}{" "}
+              <strong>{t("IA › Agentes")}</strong>.
+            </p>
           ) : (
             <p className="text-sm">
-              {t("Esta instalação ainda não tem a lista de modelos")} {provedorLegivel(provedor, t)}.{" "}
-              {t("Ela é baixada automaticamente uma vez por dia; depois disso, publique em")}{" "}
+              {t("Ainda não achei um modelo utilizável")} {provedorLegivel(provedor, t)}.{" "}
+              {t("Tente de novo neste mesmo passo — a lista baixa agora, não amanhã. Se persistir, publique em")}{" "}
               <strong>{t("IA › Agentes")}</strong>.
             </p>
           )}

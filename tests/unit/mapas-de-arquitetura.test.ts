@@ -165,6 +165,17 @@ describe("mapas de arquitetura — coerência interna", () => {
       expect(grau(peca), `${peca} com menos de 2 arestas — é ilha pelo invariante 1`).toBeGreaterThanOrEqual(2);
     }
   });
+
+  it("o catálogo no primeiro dia está no mapa, e com mais de duas arestas", () => {
+    const m = JSON.parse(
+      fs.readFileSync(path.join(DIR, "catalogo-no-primeiro-dia.architecture.json"), "utf8"),
+    ) as Mapa;
+    const grau = (id: string) =>
+      (m.edges ?? []).filter((e) => e.from === id || e.to === id).length;
+    for (const peca of ["wizard", "action", "executar", "aimodels", "escolher", "origem", "aviso"]) {
+      expect(grau(peca), `${peca} com menos de 2 arestas — é ilha pelo invariante 1`).toBeGreaterThanOrEqual(2);
+    }
+  });
 });
 
 /**

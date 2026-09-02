@@ -61,6 +61,17 @@ vi.mock("@/lib/auth/server", () => ({
 }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => clienteFalso() }));
 
+const syncCatalogo = vi.fn(async () => ({
+  fonte: "openrouter",
+  recebidos: 0,
+  gravados: 0,
+  depreciados: 0,
+  ressuscitados: 0,
+}));
+vi.mock("@/lib/ai/catalogo/executar", () => ({
+  sincronizarCatalogoComDedup: (...args: unknown[]) => syncCatalogo(...args),
+}));
+
 import { createDefaultAgent, type CreateAgentResult } from "@/app/actions/onboarding/createDefaultAgent";
 
 /**
@@ -360,6 +371,14 @@ const FALHA_AO_LISTAR: Resposta = {
 
 beforeEach(() => {
   redirects.length = 0;
+  syncCatalogo.mockReset();
+  syncCatalogo.mockResolvedValue({
+    fonte: "openrouter",
+    recebidos: 0,
+    gravados: 0,
+    depreciados: 0,
+    ressuscitados: 0,
+  });
 });
 
 describe("onboarding: publicação impossível não pode terminar em silêncio", () => {
@@ -514,15 +533,37 @@ describe("onboarding: o agente nasce no provedor que a instalação escolheu", (
     expect(estado.versoes[0]?.model).not.toBe("algum/modelo-do-settings");
   });
 
-  it("VPS fresca em OpenRouter: sem modelo no catálogo, fica rascunho e DIZ por quê", async () => {
-    // O estado real de uma instalação nova: o baseline semeia zero linhas de
-    // OpenRouter e o catálogo só chega no cron diário. Publicar aqui exigiria
-    // inventar um id de modelo — e um id inventado é o mesmo agente mudo com
-    // outro carimbo.
+  it("VPS fresca em OpenRouter: baixa o catálogo AGORA e publica", async () => {
+    // Antes: o wizard deixava rascunho e mandava esperar o cron de amanhã.
+    // A lista é pública; o mesmo I/O do cron roda neste clique. Sem este caso,
+    // um "conselho mais educado" no toast passaria e o atendente continuaria mudo.
+    const modelosPorProvedor: Record<string, string> = { anthropic: "claude-sonnet-9" };
+    const estado = montarBanco({
+      settings: { llm: { provider: "openrouter" } },
+      modelosPorProvedor,
+    });
+    syncCatalogo.mockImplementation(async () => {
+      modelosPorProvedor.openrouter = "z-ai/glm-4.7";
+      return { fonte: "openrouter", recebidos: 1, gravados: 1, depreciados: 0, ressuscitados: 0 };
+    });
+
+    const res = await clicar();
+
+    expect(syncCatalogo).toHaveBeenCalled();
+    expect(res).toBe("redirecionou");
+    expect(estado.versoes[0]).toMatchObject({
+      provider: "openrouter",
+      model: "z-ai/glm-4.7",
+      status: "published",
+    });
+  });
+
+  it("OpenRouter: origem muda, fica rascunho e DIZ para tentar de novo agora", async () => {
     const estado = montarBanco({
       settings: { llm: { provider: "openrouter" } },
       modelosPorProvedor: { anthropic: "claude-sonnet-9" },
     });
+    syncCatalogo.mockRejectedValue(new Error("catalogo_origem_status_502"));
 
     const res = await clicar();
 
@@ -530,9 +571,27 @@ describe("onboarding: o agente nasce no provedor que a instalação escolheu", (
     const r = res as CreateAgentResult;
     expect(r.ok).toBe(true);
     expect(r.ok && r.publish_blocked_by).toBe("modelo");
+    expect(r.ok && r.motivo_do_modelo).toBe("sincronizacao_falhou");
+    expect(estado.versoes).toHaveLength(0);
+    expect(redirects).toEqual([]);
+  });
+
+  it("VPS fresca em OpenRouter: sync ok mas lista ainda vazia, fica rascunho e DIZ por quê", async () => {
+    const estado = montarBanco({
+      settings: { llm: { provider: "openrouter" } },
+      modelosPorProvedor: { anthropic: "claude-sonnet-9" },
+    });
+
+    const res = await clicar();
+
+    expect(syncCatalogo).toHaveBeenCalled();
+    expect(res).not.toBe("redirecionou");
+    const r = res as CreateAgentResult;
+    expect(r.ok).toBe(true);
+    expect(r.ok && r.publish_blocked_by).toBe("modelo");
+    expect(r.ok && r.motivo_do_modelo).toBe("catalogo_vazio");
     expect(estado.versoes).toHaveLength(0);
     expect(estado.agentes[0]?.published_version_id ?? null).toBeNull();
-    // O wizard não avança calado: a tela é a única pista que a pessoa tem.
     expect(redirects).toEqual([]);
   });
 
