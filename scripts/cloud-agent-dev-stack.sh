@@ -98,6 +98,7 @@ aplica_baseline_se_faltar() {
       < supabase/migrations/20260813120000_0156_quadro_do_onboarding.sql >/dev/null \
       || true
   fi
+  PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "notify pgrst, 'reload schema';" >/dev/null || true
 }
 
 sobe_gotrue() {
@@ -190,6 +191,45 @@ print("[dev-stack] .env.local chaves locais" + (" atualizadas." if changed else 
 PY
 }
 
+# O compose local publica o WAHA em :3030. Sem URL+chave o onboarding trata
+# o WhatsApp como "ainda não subiu" e nunca mostra o QR.
+aponta_waha_local() {
+  if ! docker inspect deskcomm-waha >/dev/null 2>&1; then
+    echo "[dev-stack] WAHA container ausente — pulando."
+    return 0
+  fi
+  [[ -f .env.local ]] || return 0
+  local waha_key
+  waha_key="$(docker inspect deskcomm-waha --format '{{range .Config.Env}}{{println .}}{{end}}' | awk -F= '/^WAHA_API_KEY=/{print substr($0,14); exit}')"
+  if [ -z "$waha_key" ]; then
+    echo "[dev-stack] WAHA_API_KEY vazia no container — pulando."
+    return 0
+  fi
+  python3 - "$waha_key" <<'PY'
+from pathlib import Path
+import sys
+key = sys.argv[1]
+p = Path(".env.local")
+lines = p.read_text().splitlines()
+out, seen_url, seen_key = [], False, False
+for line in lines:
+    if line.startswith("WAHA_API_BASE_URL="):
+        out.append("WAHA_API_BASE_URL=http://127.0.0.1:3030")
+        seen_url = True
+    elif line.startswith("WAHA_API_KEY="):
+        out.append(f"WAHA_API_KEY={key}")
+        seen_key = True
+    else:
+        out.append(line)
+if not seen_url:
+    out.append("WAHA_API_BASE_URL=http://127.0.0.1:3030")
+if not seen_key:
+    out.append(f"WAHA_API_KEY={key}")
+p.write_text("\n".join(out) + "\n")
+print("[dev-stack] WAHA apontado para deskcomm-waha:3030")
+PY
+}
+
 semeia_dono() {
   if ! command -v pnpm >/dev/null 2>&1; then
     echo "[dev-stack] pnpm ausente — pulei bootstrap-owner."
@@ -207,5 +247,6 @@ sobe_gotrue
 sobe_postgrest
 sobe_gateway
 grava_chaves_no_env_local
+aponta_waha_local
 semeia_dono
 echo "[dev-stack] login local: ${OWNER_EMAIL} / (OWNER_PASSWORD no ambiente; padrão DevLogin!1234)"
