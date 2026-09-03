@@ -170,7 +170,7 @@ export function buildModel(provider: string, apiKey: string, modelId: string): L
     case "google":
       return createGoogleGenerativeAI({ apiKey })(modelId);
     // O ensaio precisa alcançar o mesmo provedor que o turno real alcança.
-    // Sem este caso, o dono que instalou pela opção [1] do instalador publica
+    // Sem este caso, o dono que instalou com OpenRouter publica
     // o agente, clica em "Teste" para conferir antes de confiar, e recebe
     // `unsupported_provider` — enquanto a mensagem de verdade seria respondida
     // normalmente pelo worker. Erro no ensaio lê-se como produto quebrado.

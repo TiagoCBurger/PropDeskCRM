@@ -8,7 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { salvarChaveDaIa } from "@/app/actions/onboarding/chaveDaIa";
-import { PROVEDORES } from "@/lib/ai/pontos/provedores";
+import {
+  ehProvedorLiberadoParaEscolha,
+  PROVEDOR_POR_ID,
+  provedoresLiberadosParaEscolha,
+  provedoresParaEscolha,
+} from "@/lib/ai/pontos/provedores";
 
 /**
  * "O CÉREBRO DELE" — a chave, medida e testada onde ela passa a importar.
@@ -52,7 +57,10 @@ export function InteligenciaDele({ inicial }: { inicial: EstadoDaChave }) {
   const [prova, setProva] = useState<Prova | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [apiKey, setApiKey] = useState("");
-  const [provedor, setProvedor] = useState(inicial.provedor);
+  const [provedor, setProvedor] = useState(() => {
+    if (ehProvedorLiberadoParaEscolha(inicial.provedor)) return inicial.provedor;
+    return provedoresLiberadosParaEscolha()[0]?.id ?? "anthropic";
+  });
 
   const temChave = chave.origem !== "nenhuma";
 
@@ -120,7 +128,7 @@ export function InteligenciaDele({ inicial }: { inicial: EstadoDaChave }) {
               onChange={(e) => setProvedor(e.target.value)}
               className="h-9 w-full rounded-md border bg-background px-3 text-sm"
             >
-              {PROVEDORES.map((p) => (
+              {provedoresParaEscolha().map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.rotulo}
                 </option>
@@ -158,7 +166,7 @@ export function InteligenciaDele({ inicial }: { inicial: EstadoDaChave }) {
               setChave({
                 origem: "org",
                 provedor,
-                rotulo: PROVEDORES.find((p) => p.id === provedor)?.rotulo ?? provedor,
+                rotulo: PROVEDOR_POR_ID.get(provedor)?.rotulo ?? provedor,
                 final: r.final,
               });
               toast.success(t("Chave guardada. Agora ele pode pensar."));

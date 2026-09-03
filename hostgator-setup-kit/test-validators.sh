@@ -1753,11 +1753,11 @@ rm -rf "$TMP_PRIV"
 
 echo "integração: os TRÊS provedores de IA que o instalador oferece"
 # A pergunta "qual IA vai atender" tem três respostas, e até aqui só uma delas
-# era exercitada: todo cenário desta suíte responde Enter, e Enter é [2]
+# era exercitada: todo cenário desta suíte responde Enter, e Enter é [1]
 # Anthropic. As outras duas estavam quebradas, cada uma de um jeito, e a suíte
 # inteira ficava verde:
 #
-#   [1] OpenRouter → `v_openrouter` era declarada como validador do campo e
+#   [2] OpenRouter → `v_openrouter` era declarada como validador do campo e
 #       nunca definida. `ask_one` despacha o validador pelo NOME, então o nome
 #       inexistente vira exit 127: no modo interativo o laço repete a pergunta
 #       para sempre, e no `--yes` vira "OPENROUTER_API_KEY inválido / corrija o

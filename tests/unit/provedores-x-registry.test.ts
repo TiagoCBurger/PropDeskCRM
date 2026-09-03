@@ -14,15 +14,24 @@
  *  - **No registry, fora da lista:** o sistema sabe executar um provedor que
  *    ninguém consegue escolher pela tela — trabalho feito e inalcançável, que é
  *    a forma como funcionalidade morre neste produto.
+ *
+ * Há um terceiro eixo de propósito: `liberadoParaEscolha`. Um provedor pode
+ * estar no registry E na lista e ainda assim ficar de fora das escolhas novas
+ * enquanto a gente o libera aos poucos. Isso NÃO é o segundo modo de falha —
+ * o campo é a porta, e o teste abaixo cobra que a porta exista em vez de
+ * apagar o provedor do registry.
  */
 import { describe, expect, it } from "vitest";
 
 import { createDefaultRegistry } from "@/lib/agent-engine/edge/llm/providers";
 import {
+  ehProvedorLiberadoParaEscolha,
   ehProvedorSuportado,
   IDS_DE_PROVEDOR,
   PROVEDORES,
   PROVEDOR_POR_ID,
+  provedoresLiberadosParaEscolha,
+  provedoresParaEscolha,
 } from "@/lib/ai/pontos/provedores";
 
 const registry = createDefaultRegistry();
@@ -33,20 +42,50 @@ describe("lista de provedores × registry", () => {
     expect(Object.keys(registry).length).toBeGreaterThanOrEqual(4);
   });
 
-  it("todo provedor oferecido na tela é executável", () => {
-    const semExecucao = PROVEDORES.filter((p) => registry[p.id] === undefined).map((p) => p.id);
+  it("todo provedor oferecido numa escolha nova é executável", () => {
+    const semExecucao = provedoresLiberadosParaEscolha()
+      .filter((p) => registry[p.id] === undefined)
+      .map((p) => p.id);
     expect(
       semExecucao,
       "a tela ofereceria um provedor que toda chamada recusaria com llm_provider_unknown",
     ).toEqual([]);
   });
 
-  it("todo provedor executável é oferecido na tela", () => {
+  it("todo provedor suportado é executável", () => {
+    const semExecucao = PROVEDORES.filter((p) => registry[p.id] === undefined).map((p) => p.id);
+    expect(semExecucao).toEqual([]);
+  });
+
+  it("todo provedor executável está na lista de suportados", () => {
     const semPorta = Object.keys(registry).filter((id) => !ehProvedorSuportado(id));
     expect(
       semPorta,
-      "o sistema saberia usar um provedor que ninguém consegue escolher — trabalho inalcançável",
+      "o sistema saberia usar um provedor que a lista não declara — trabalho inalcançável",
     ).toEqual([]);
+  });
+});
+
+describe("liberação gradual da escolha", () => {
+  it("por enquanto só a Anthropic está liberada para escolha nova", () => {
+    expect(provedoresLiberadosParaEscolha().map((p) => p.id)).toEqual(["anthropic"]);
+    expect(ehProvedorLiberadoParaEscolha("anthropic")).toBe(true);
+    expect(ehProvedorLiberadoParaEscolha("openai")).toBe(false);
+    expect(ehProvedorLiberadoParaEscolha("google")).toBe(false);
+    expect(ehProvedorLiberadoParaEscolha("openrouter")).toBe(false);
+  });
+
+  it("os outros continuam no registry — desligar a flag os traz de volta", () => {
+    expect(registry["openrouter"]).toBeTypeOf("function");
+    expect(registry["openai"]).toBeTypeOf("function");
+    expect(registry["google"]).toBeTypeOf("function");
+  });
+
+  it("a tela do agente inclui o valor já gravado mesmo se ele ainda não está liberado", () => {
+    const ids = provedoresParaEscolha(["openrouter"]).map((p) => p.id);
+    expect(ids).toContain("anthropic");
+    expect(ids).toContain("openrouter");
+    expect(provedoresParaEscolha().map((p) => p.id)).not.toContain("openrouter");
   });
 });
 
@@ -265,9 +304,6 @@ describe("a corrente inteira: lista × execução × tela", () => {
   });
 
   it("a tela do agente DERIVA a lista, em vez de repetir os provedores à mão", async () => {
-    // Guarda de construção: enquanto o seletor for montado a partir de
-    // PROVEDORES, "a tela oferece todos" é verdade por construção e o
-    // invariante do topo deste arquivo passa a valer para o que se vê.
     const { readFileSync } = await import("node:fs");
     const fonte = readFileSync("app/app/ai/agents/[id]/_components/AgentForm.tsx", "utf8");
 
@@ -280,5 +316,41 @@ describe("a corrente inteira: lista × execução × tela", () => {
       "o seletor voltou a listar provedores à mão — o próximo provedor da lista nasce invisível na tela",
     ).toEqual([]);
     expect(fonte).toMatch(/from "@\/lib\/ai\/pontos\/provedores"/);
+    expect(fonte).toMatch(/provedoresParaEscolha\(/);
+  });
+});
+
+describe("as portas de ESCRITA recusam provedor ainda não liberado", () => {
+  it("o wizard recusa", async () => {
+    const { readFileSync } = await import("node:fs");
+    const fonte = readFileSync("app/actions/onboarding/chaveDaIa.ts", "utf8");
+    expect(fonte).toMatch(/ehProvedorLiberadoParaEscolha\(provider\)/);
+  });
+
+  it("POST /api/v1/ai/credentials recusa", async () => {
+    const { readFileSync } = await import("node:fs");
+    const fonte = readFileSync("app/api/v1/ai/credentials/route.ts", "utf8");
+    expect(fonte).toMatch(/ehProvedorLiberadoParaEscolha\(provider\)/);
+  });
+
+  it("PUT /api/v1/ai/providers recusa escolha nova e preserva a já gravada", async () => {
+    const { readFileSync } = await import("node:fs");
+    const fonte = readFileSync("app/api/v1/ai/providers/route.ts", "utf8");
+    expect(fonte).toMatch(/ehProvedorLiberadoParaEscolha\(corpo\.provider\)/);
+    expect(fonte).toMatch(/existente\?\.provider !== corpo\.provider/);
+  });
+
+  it("o wizard deriva da lista liberada, não de PROVEDORES inteiro", async () => {
+    const { readFileSync } = await import("node:fs");
+    const fonte = readFileSync("app/onboarding/setup-ai/_inteligencia.tsx", "utf8");
+    expect(fonte).toMatch(/provedoresParaEscolha\(/);
+    expect(fonte).not.toMatch(/PROVEDORES\.map/);
+  });
+
+  it("o diálogo de credencial nova deriva da lista liberada", async () => {
+    const { readFileSync } = await import("node:fs");
+    const fonte = readFileSync("app/app/ai/credentials/_components/AddCredentialDialog.tsx", "utf8");
+    expect(fonte).toMatch(/provedoresLiberadosParaEscolha\(/);
+    expect(fonte).not.toMatch(/PROVEDORES\.map/);
   });
 });

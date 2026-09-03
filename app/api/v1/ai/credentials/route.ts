@@ -17,7 +17,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
 import { type Provider } from "@/lib/ai/provider-validators";
 import { guardarCredencial } from "@/lib/ai/credenciais/guardar";
-import { IDS_DE_PROVEDOR } from "@/lib/ai/pontos/provedores";
+import { ehProvedorLiberadoParaEscolha, IDS_DE_PROVEDOR, MENSAGEM_PROVEDOR_AINDA_NAO_LIBERADO } from "@/lib/ai/pontos/provedores";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -77,6 +77,12 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
   const input = parsed.data;
   const provider = input.provider as Provider;
+
+  if (!ehProvedorLiberadoParaEscolha(provider)) {
+    return fail("provedor_ainda_nao_liberado", MENSAGEM_PROVEDOR_AINDA_NAO_LIBERADO, 422, {
+      requestId,
+    });
+  }
 
   // O miolo — cifrar, gravar, auditar e validar em segundo plano — mora em
   // `lib/ai/credenciais/guardar.ts` porque o wizard precisa exatamente do mesmo

@@ -164,36 +164,52 @@ async function garantirDiaClicavelNoPainel(page: Page, mensagemFalha: string): P
     })
     .toBeGreaterThan(0);
 
-  await expect
-    .poll(
-      async () => {
-        if ((await dias().count()) > 0) return true;
-        const proximo = page.getByTestId("mes-seguinte");
-        if (await proximo.isEnabled()) {
-          await proximo.click();
-        }
-        return (await dias().count()) > 0;
-      },
-      {
-        timeout: 25_000,
-        message:
-          mensagemFalha +
-          " — nem o mês seguinte abriu dia (botão bloqueado ou consulta ainda em voo)",
-      },
-    )
-    .toBe(true);
+  // Espera o MÊS ATUAL pintar vagas ANTES de pular. Clicar `mes-seguinte` no
+  // primeiro vazio (consulta ainda em voo) leva o painel a outubro enquanto a
+  // semana desenhada continua em setembro — e o passo seguinte explode com
+  // "mês seguinte está bloqueado". Medido no CI em 2026-09-03 (run 33699510980).
+  try {
+    await expect.poll(async () => await dias().count(), { timeout: 15_000 }).toBeGreaterThan(0);
+  } catch {
+    const proximo = page.getByTestId("mes-seguinte");
+    if (await proximo.isEnabled()) {
+      await proximo.click();
+    }
+  }
 
-  await expect(dias().first(), mensagemFalha).toBeVisible({ timeout: 5_000 });
+  await expect(dias().first(), mensagemFalha).toBeVisible({ timeout: 15_000 });
 }
 
-/** Avança o mês no painel só quando o produto permite — nunca clica em botão mudo. */
-async function avancarMesNoPainelSeHabilitado(page: Page): Promise<void> {
-  const proximo = page.getByTestId("mes-seguinte");
-  await expect(
-    proximo,
-    "nenhum dia disponível e o mês seguinte está bloqueado — a janela de busca não alcança",
-  ).toBeEnabled({ timeout: 5_000 });
-  await proximo.click();
+/** `yyyy-MM` do mês que o mini-calendário está mostrando (célula do meio do grid). */
+async function mesVisivelDoPainel(page: Page): Promise<string | null> {
+  const chaves = await page
+    .locator('[data-testid^="dia-"]')
+    .evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")?.slice(4) ?? "").filter(Boolean));
+  if (chaves.length === 0) return null;
+  const meio = chaves[Math.floor(chaves.length / 2)];
+  return meio ? meio.slice(0, 7) : null;
+}
+
+/** Leva o mini-calendário ao mês do alvo, para frente OU para trás. */
+async function alinharPainelAoMes(page: Page, alvoYyyyMm: string): Promise<void> {
+  for (let salto = 0; salto < 4; salto++) {
+    const visivel = await mesVisivelDoPainel(page);
+    if (!visivel || visivel === alvoYyyyMm) return;
+    const antes = visivel;
+    if (alvoYyyyMm < visivel) {
+      await page.getByTestId("mes-anterior").click();
+    } else {
+      const proximo = page.getByTestId("mes-seguinte");
+      if (!(await proximo.isEnabled())) return;
+      await proximo.click();
+    }
+    await expect
+      .poll(async () => await mesVisivelDoPainel(page), {
+        timeout: 10_000,
+        message: `o mini-calendário não saiu de ${antes}`,
+      })
+      .not.toBe(antes);
+  }
 }
 
 /**
@@ -223,15 +239,19 @@ export async function escolherDiaDesenhado(page: Page, dias: readonly string[]):
     "nenhum dia disponível no painel — o seed da agenda não deixou jornada publicada",
   );
 
-  let candidatos = await disponiveis();
-  if (candidatos.length === 0) {
-    await avancarMesNoPainelSeHabilitado(page);
-    await expect(
-      page.locator('[data-testid^="dia-"][data-disponivel="true"]').first(),
-      "nem o mês seguinte oferece dia — a janela de busca do painel é de 30 dias",
-    ).toBeVisible({ timeout: 20_000 });
-    candidatos = await disponiveis();
-  }
+  const alvoMes = [...dias].sort()[0]?.slice(0, 7);
+  if (alvoMes) await alinharPainelAoMes(page, alvoMes);
+
+  await expect
+    .poll(async () => (await disponiveis()).length, {
+      timeout: 20_000,
+      message:
+        `nenhum dia da semana desenhada (${dias.join(", ")}) está disponível no painel — ` +
+        "o alvo e a grade deixariam de falar do mesmo período",
+    })
+    .toBeGreaterThan(0);
+
+  const candidatos = await disponiveis();
 
   const escolhido = candidatos.sort()[0];
   expect(

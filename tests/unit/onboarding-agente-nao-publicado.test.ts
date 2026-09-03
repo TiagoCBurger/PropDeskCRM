@@ -469,7 +469,7 @@ describe("onboarding: publicação impossível não pode terminar em silêncio",
  * `organizations.settings.llm.provider`. O onboarding ignorava: buscava o
  * modelo com `.eq("provider","anthropic")` e gravava `provider:"anthropic"`
  * literal na versão publicada. Como o provider da VERSÃO vence o da
- * organização em `resolveOrgLlmConfig`, quem escolheu OpenRouter — a opção [1]
+ * organização em `resolveOrgLlmConfig`, quem escolheu OpenRouter no instalador
  * do menu — terminava o wizard com um agente "Publicado" que morria em TODA
  * mensagem, pedindo uma chave da Anthropic que ele nunca teve.
  *

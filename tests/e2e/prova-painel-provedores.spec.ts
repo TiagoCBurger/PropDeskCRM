@@ -10,7 +10,8 @@
  *  - F0/F1: o painel mostra os pontos agrupados, explica cada um e diz a ORIGEM
  *    da escolha;
  *  - F1: trocar o modelo grava, e o valor gravado é o que a tela passa a exibir;
- *  - F3: a OpenRouter aparece como opção e seus modelos estão no seletor;
+ *  - F3: a escolha nova oferece Anthropic e NÃO oferece OpenRouter/OpenAI/Google
+ *    (eles entram aos poucos via `liberadoParaEscolha`);
  *  - F1/F3: a catraca recusa modelo sem ferramentas no ponto que cria o lead;
  *  - F2: a tela de execuções abre e responde "está tudo bem?".
  */
@@ -43,9 +44,7 @@ let creds: CredsE2E;
  * primeiro `page.click` depois do login, e a mensagem fala do botão.
  *
  * Medido: rodando isolada (`-g F3`), a spec passa em 15s; na suíte, o terceiro
- * caso estourava sempre. Com o painel medido por instrumento — abrir cada grupo
- * com 424 modelos no catálogo custa 60–105ms —, não há o que otimizar na tela: o
- * custo é a janela do segundo fator.
+ * caso estourava sempre. O custo é a janela do segundo fator, não a tela.
  */
 test.describe.configure({ timeout: 90_000 });
 
@@ -101,22 +100,23 @@ test("F1 — ponto fixo mostra a RAZÃO, não um cadeado mudo", async ({ page })
   await page.screenshot({ path: "evidence/provedores/03-ponto-fixo-com-razao.png", fullPage: true });
 });
 
-test("F3 — a OpenRouter é oferecida e seus modelos estão no seletor", async ({ page }) => {
+test("F3 — a escolha nova oferece Anthropic e esconde o resto", async ({ page }) => {
   await page.goto("/app/ai/providers");
   await page.waitForSelector('[data-testid="painel-de-provedores"]');
   await page.click('[data-testid="avancado-entender"]');
 
   await page.click('[data-testid="provider-stage_classifier"]');
-  await expect(page.getByRole("option", { name: /OpenRouter/ })).toBeVisible();
-  await page.getByRole("option", { name: /OpenRouter/ }).click();
+  await expect(page.getByRole("option", { name: /Anthropic/ })).toBeVisible();
+  await expect(page.getByRole("option", { name: /OpenRouter/ })).toHaveCount(0);
+  await expect(page.getByRole("option", { name: /OpenAI/ })).toHaveCount(0);
+  await expect(page.getByRole("option", { name: /Gemini/ })).toHaveCount(0);
+  await page.getByRole("option", { name: /Anthropic/ }).click();
 
   await page.click('[data-testid="modelo-stage_classifier"]');
-  // O catálogo sincronizado precisa ter chegado ao seletor; sem isto a opção
-  // existiria e não haveria o que escolher.
   await expect(page.getByRole("option").first()).toBeVisible();
   const quantos = await page.getByRole("option").count();
-  expect(quantos, "o seletor não trouxe modelos da OpenRouter").toBeGreaterThan(50);
-  await page.screenshot({ path: "evidence/provedores/04-modelos-openrouter.png", fullPage: true });
+  expect(quantos, "o seletor não trouxe os modelos da Anthropic do catálogo").toBeGreaterThan(2);
+  await page.screenshot({ path: "evidence/provedores/04-modelos-anthropic.png", fullPage: true });
 });
 
 test("F1 — trocar o modelo GRAVA, e a tela passa a mostrar o novo", async ({ page }) => {
@@ -124,10 +124,8 @@ test("F1 — trocar o modelo GRAVA, e a tela passa a mostrar o novo", async ({ p
   await page.waitForSelector('[data-testid="painel-de-provedores"]');
   await page.click('[data-testid="avancado-entender"]');
 
-  await page.click('[data-testid="provider-stage_classifier"]');
-  await page.getByRole("option", { name: /OpenRouter/ }).click();
   await page.click('[data-testid="modelo-stage_classifier"]');
-  await page.getByRole("option", { name: /Llama 3\.3 70B Instruct/ }).first().click();
+  await page.getByRole("option", { name: /Claude Haiku/ }).first().click();
   await page.click('[data-testid="salvar-stage_classifier"]');
 
   // A confirmação é o mínimo; o que importa vem depois.
@@ -143,7 +141,7 @@ test("F1 — trocar o modelo GRAVA, e a tela passa a mostrar o novo", async ({ p
   await page.waitForSelector('[data-testid="painel-de-provedores"]');
   await page.click('[data-testid="avancado-entender"]');
   const cartao = page.locator('[data-testid="ponto-stage_classifier"]');
-  await expect(cartao).toContainText("llama-3.3-70b-instruct");
+  await expect(cartao).toContainText(/claude-haiku/);
   await expect(page.locator('[data-testid="origem-stage_classifier"]')).toContainText(
     /Escolhido por você/i,
   );
@@ -151,8 +149,8 @@ test("F1 — trocar o modelo GRAVA, e a tela passa a mostrar o novo", async ({ p
 });
 
 test("F1/F3 — a catraca RECUSA modelo sem ferramentas no ponto que cria o lead", async ({ page }) => {
-  // O desfecho que a abertura da OpenRouter torna possível: o agente conversa
-  // bem, o cliente é atendido, e nada chega ao funil — sem erro na tela.
+  // O desfecho que a tela precisa impedir: o agente conversa bem, o cliente é
+  // atendido, e nada chega ao funil — sem erro na tela.
   await page.goto("/app/ai/providers");
   await page.waitForSelector('[data-testid="painel-de-provedores"]');
   await page.click('[data-testid="avancado-atender"]');
