@@ -353,13 +353,13 @@ v_anthropic() {
   esac
 }
 
-# A OpenRouter entrou na lista de provedores (opção [1] da pergunta de qual IA
-# vai atender) sem que este validador existisse. `ask_one` despacha o validador
-# pelo NOME — `"$validator" "$input"` —, então um nome inexistente vira exit 127
-# e o laço repete a pergunta para sempre: a pessoa que escolhe [1] não consegue
-# terminar a instalação. E no caminho `--yes` a mesma ausência vira
-# "OPENROUTER_API_KEY inválido" seguido de "Corrija o .env e rode de novo" —
-# instrução impossível de cumprir, porque o .env está certo.
+# A OpenRouter entrou na lista de provedores (hoje opção [2] da pergunta de
+# qual IA vai atender) sem que este validador existisse. `ask_one` despacha o
+# validador pelo NOME — `"$validator" "$input"` —, então um nome inexistente
+# vira exit 127 e o laço repete a pergunta para sempre: a pessoa que escolhe
+# OpenRouter não consegue terminar a instalação. E no caminho `--yes` a mesma
+# ausência vira "OPENROUTER_API_KEY inválido" seguido de "Corrija o .env e rode
+# de novo" — instrução impossível de cumprir, porque o .env está certo.
 v_openrouter() {
   case "$1" in sk-or-*) ;; *) echo "A chave da OpenRouter começa com 'sk-or-'. Pegue em openrouter.ai/keys."; return 1;; esac
   local code
@@ -1054,21 +1054,18 @@ fi
 # convite mostrando o link de aceite na própria tela).
 # ── Qual IA vai atender ─────────────────────────────────────────────────────
 #
-# Antes daqui o instalador só sabia pedir a chave da Anthropic, e quem já tinha
-# conta em outro provedor descobria isso tarde: instalava, cadastrava a chave
-# "errada", e o agente não respondia. A OpenRouter mudou a conta dessa escolha —
-# uma chave só dá acesso a centenas de modelos de dezenas de fabricantes, o que
-# costuma ser o caminho mais simples para quem está começando.
-#
-# A pergunta vem ANTES das credenciais porque é ela que decide QUAL credencial
-# será pedida; perguntar depois obrigaria a voltar atrás.
+# Começamos só com Anthropic no produto (a flag `liberadoParaEscolha`). O
+# instalador ainda ACEITA OpenRouter e OpenAI no .env — uma instalação que já
+# escolheu continua — mas a pergunta nova aponta para o Claude, que é o que a
+# tela do wizard oferece hoje. OpenRouter e os outros entram de novo quando a
+# flag virar, sem migration.
 escolher_provedor() {
   # Numa 2ª execução, o provedor já escolhido vira o default — quem re-roda o
   # script para corrigir outra coisa não deve ter que reescolher isto.
   local atual="${AI_PROVIDER:-}"
   if [ -z "$atual" ]; then
-    if   [ -n "${OPENROUTER_API_KEY:-}" ]; then atual="openrouter"
-    elif [ -n "${ANTHROPIC_API_KEY:-}" ];  then atual="anthropic"
+    if   [ -n "${ANTHROPIC_API_KEY:-}" ];  then atual="anthropic"
+    elif [ -n "${OPENROUTER_API_KEY:-}" ]; then atual="openrouter"
     elif [ -n "${OPENAI_API_KEY:-}" ];     then atual="openai"
     fi
   fi
@@ -1079,23 +1076,23 @@ escolher_provedor() {
   fi
 
   printf '\n\033[1mQual inteligência artificial vai atender seus clientes?\033[0m\n\n'
-  printf '  [1] OpenRouter  — uma chave, centenas de modelos de vários fabricantes.\n'
-  printf '                    O caminho mais simples para experimentar. (openrouter.ai/keys)\n'
-  printf '  [2] Anthropic   — o Claude. É o que melhor segue instruções longas e usa\n'
+  printf '  [1] Anthropic   — o Claude. É o que melhor segue instruções longas e usa\n'
   printf '                    as ferramentas do CRM. (console.anthropic.com)\n'
+  printf '  [2] OpenRouter  — uma chave, centenas de modelos de vários fabricantes.\n'
+  printf '                    (openrouter.ai/keys) Ainda não aparece no wizard do app.\n'
   printf '  [3] OpenAI      — o GPT. (platform.openai.com/api-keys)\n'
   printf '\n'
   printf '  Dá para trocar depois, e por parte do sistema, em Agente de IA → Provedores.\n\n'
 
-  local padrao_num=2
-  case "$atual" in openrouter) padrao_num=1;; openai) padrao_num=3;; esac
+  local padrao_num=1
+  case "$atual" in openrouter) padrao_num=2;; openai) padrao_num=3;; esac
 
   while :; do
     if ! read -r -p "Escolha (Enter = ${padrao_num}): " escolha; then escolha=""; fi
     [ -z "$escolha" ] && escolha="$padrao_num"
     case "$escolha" in
-      1) AI_PROVIDER="openrouter"; break;;
-      2) AI_PROVIDER="anthropic";  break;;
+      1) AI_PROVIDER="anthropic";  break;;
+      2) AI_PROVIDER="openrouter"; break;;
       3) AI_PROVIDER="openai";     break;;
       *) c_ylw "Digite 1, 2 ou 3.";;
     esac

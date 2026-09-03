@@ -32,7 +32,7 @@ import {
   type CredentialRow,
   type Provider,
 } from "@/hooks/ai/useCredentials";
-import { IDS_DE_PROVEDOR, PROVEDORES } from "@/lib/ai/pontos/provedores";
+import { IDS_DE_PROVEDOR, provedoresLiberadosParaEscolha } from "@/lib/ai/pontos/provedores";
 import { useT } from "@/hooks/i18n/useT";
 
 const formSchema = z.object({
@@ -144,7 +144,7 @@ export function AddCredentialDialog({ open, onOpenChange }: Props) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {PROVEDORES.map((p) => (
+                {provedoresLiberadosParaEscolha().map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.rotulo}
                   </SelectItem>

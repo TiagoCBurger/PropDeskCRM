@@ -29,8 +29,8 @@ const envSchema = z.object({
   // OpenAI e a chave no `.env` continuava sem credencial utilizável, e a única
   // saída era cadastrar BYOK pela tela — sem nada dizendo isso.
   OPENAI_API_KEY: z.string().min(1).optional(),
-  // A TERCEIRA irmã, e a que mais doía faltar: OpenRouter é a opção **[1]** do
-  // menu do instalador, a que ele chama de caminho mais simples. O ramo
+  // A TERCEIRA irmã, e a que mais doía faltar: OpenRouter é opção do
+  // menu do instalador. O ramo
   // `provider === 'openrouter'` existe em `resolveOrgLlmConfig` e
   // `llmEdgeConfigFromEnv` já lia `env.OPENROUTER_API_KEY` — mas o parâmetro
   // declara a chave como opcional (typecheck passa sem ela) e `loadEnv` devolve

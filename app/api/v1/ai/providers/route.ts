@@ -26,7 +26,12 @@ import {
   type LinhaDeBinding,
 } from "@/lib/ai/pontos/resolver";
 import { PAPEIS, PONTOS_DE_IA, PONTO_POR_ID } from "@/lib/ai/pontos/registro";
-import { PROVEDORES, ehProvedorSuportado } from "@/lib/ai/pontos/provedores";
+import {
+  ehProvedorLiberadoParaEscolha,
+  ehProvedorSuportado,
+  MENSAGEM_PROVEDOR_AINDA_NAO_LIBERADO,
+  provedoresParaEscolha,
+} from "@/lib/ai/pontos/provedores";
 import { validarBinding } from "@/lib/ai/pontos/validar-binding";
 import { createClient } from "@/lib/supabase/server";
 
@@ -99,7 +104,21 @@ export async function GET(): Promise<Response> {
     : null;
 
   const modelos = (modelosRes.data ?? []) as ModeloDoCatalogo[];
-  const capacidadePorModelo = new Map(modelos.map((m) => [`${m.provider}|${m.model_id}`, m]));
+  const usados = new Set<string>();
+  if (padraoDaOrganizacao.provider) usados.add(padraoDaOrganizacao.provider);
+  if (agentePublicado?.provider) usados.add(agentePublicado.provider);
+  for (const cred of credsRes.data ?? []) {
+    if (typeof (cred as { provider?: string }).provider === "string") {
+      usados.add((cred as { provider: string }).provider);
+    }
+  }
+  for (const b of bindings.values()) {
+    if (b.provider) usados.add(b.provider);
+  }
+  const provedores = provedoresParaEscolha(usados);
+  const idsVisiveis = new Set(provedores.map((p) => p.id));
+  const modelosVisiveis = modelos.filter((m) => idsVisiveis.has(m.provider));
+  const capacidadePorModelo = new Map(modelosVisiveis.map((m) => [`${m.provider}|${m.model_id}`, m]));
 
   const pontos = PONTOS_DE_IA.map((ponto) => {
     const decisao = decidirBinding({
@@ -172,9 +191,9 @@ export async function GET(): Promise<Response> {
   return ok({
     papeis: PAPEIS,
     pontos,
-    provedores: PROVEDORES,
+    provedores,
     credenciais: credsRes.data ?? [],
-    modelos,
+    modelos: modelosVisiveis,
     podeEditar: roleAtLeast(org.role, "admin"),
   });
 }
@@ -215,6 +234,18 @@ export async function PUT(req: NextRequest): Promise<Response> {
   if (!ponto) return fail("ponto_desconhecido", `"${corpo.purpose}" não é um ponto do sistema`, 404);
 
   const db = await createClient();
+
+  if (!ehProvedorLiberadoParaEscolha(corpo.provider)) {
+    const { data: existente } = await db
+      .from("ai_purpose_bindings")
+      .select("provider")
+      .eq("organization_id", org.orgId)
+      .eq("purpose", corpo.purpose)
+      .maybeSingle();
+    if (existente?.provider !== corpo.provider) {
+      return fail("provedor_ainda_nao_liberado", MENSAGEM_PROVEDOR_AINDA_NAO_LIBERADO, 422);
+    }
+  }
 
   // A capacidade vem do catálogo (o que o FABRICANTE declara), nunca de
   // heurística sobre o nome do modelo.

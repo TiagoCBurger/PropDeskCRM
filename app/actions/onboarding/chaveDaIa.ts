@@ -19,7 +19,11 @@ import { revalidatePath } from "next/cache";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { guardarCredencial, mensagemAoFalharGuardar } from "@/lib/ai/credenciais/guardar";
-import { IDS_DE_PROVEDOR } from "@/lib/ai/pontos/provedores";
+import {
+  ehProvedorLiberadoParaEscolha,
+  IDS_DE_PROVEDOR,
+  MENSAGEM_PROVEDOR_AINDA_NAO_LIBERADO,
+} from "@/lib/ai/pontos/provedores";
 import type { Provider } from "@/lib/ai/provider-validators";
 import { requireOnboardingCtx, OnboardingError } from "./_shared";
 
@@ -43,6 +47,9 @@ export async function salvarChaveDaIa(formData: FormData): Promise<ResultadoDaCh
   const provider = String(formData.get("provider") ?? "");
   if (!(IDS_DE_PROVEDOR as readonly string[]).includes(provider)) {
     return { ok: false, erro: "Escolha qual inteligência artificial você contratou." };
+  }
+  if (!ehProvedorLiberadoParaEscolha(provider)) {
+    return { ok: false, erro: MENSAGEM_PROVEDOR_AINDA_NAO_LIBERADO };
   }
 
   const apiKey = String(formData.get("api_key") ?? "").trim();

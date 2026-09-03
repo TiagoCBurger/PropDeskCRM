@@ -1,8 +1,7 @@
 /**
  * ESCOLHER OPENROUTER NO INSTALADOR NÃO PODE SER UMA PERGUNTA DECORATIVA.
  *
- * O `install.sh` passou a oferecer OpenRouter como PRIMEIRA opção de "qual IA
- * vai atender". A partir daí, cada lugar que só conhece anthropic/openai vira
+ * O `install.sh` oferece OpenRouter no menu de "qual IA vai atender". A partir daí, cada lugar que só conhece anthropic/openai vira
  * um buraco na instalação que aceitou o convite — e os buracos são mudos, que é
  * o que os torna caros:
  *
