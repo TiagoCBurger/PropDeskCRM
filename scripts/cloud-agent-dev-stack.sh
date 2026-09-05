@@ -13,6 +13,15 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Disco do workspace (não volume Docker anônimo). Sobrevive a `start` nesta VM
+# e entra no snapshot do ambiente se o Cursor gravar o worktree. Pod novo =
+# pasta vazia. Git ignora o conteúdo — só o README viaja.
+PERSIST_ROOT="${DEV_PERSIST_ROOT:-$PWD/.cursor/dev-persist}"
+PERSIST_PG="$PERSIST_ROOT/postgres"
+PERSIST_WAHA_SESS="$PERSIST_ROOT/waha-sessions"
+PERSIST_WAHA_MEDIA="$PERSIST_ROOT/waha-media"
+PERSIST_WAHA_KEY="$PERSIST_ROOT/waha-api-key"
+
 PG_IMAGE="${DEV_PG_IMAGE:-public.ecr.aws/supabase/postgres:17.6.1.165}"
 GOTRUE_IMAGE="${DEV_GOTRUE_IMAGE:-public.ecr.aws/supabase/gotrue:v2.196.0}"
 PGRST_IMAGE="${DEV_PGRST_IMAGE:-public.ecr.aws/supabase/postgrest:v16.1}"
@@ -25,12 +34,75 @@ SERVICE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIi
 OWNER_EMAIL="${OWNER_EMAIL:-dev@deskcomm.local}"
 OWNER_PASSWORD="${OWNER_PASSWORD:-DevLogin!1234}"
 OWNER_ORG_NAME="${OWNER_ORG_NAME:-Dev Local}"
+# Login extra de desenvolvimento — a mesma org do dono, senha conhecida.
+# Não vai para o install.sh (produção). Só este stack local.
+DEV_TEST_EMAIL="${DEV_TEST_EMAIL:-ticburger@gmail.com}"
+DEV_TEST_PASSWORD="${DEV_TEST_PASSWORD:-Douglasti1@}"
+
+WAHA_IMAGE="${DEV_WAHA_IMAGE:-devlikeapro/waha:noweb}"
 
 precisa_docker() {
   command -v docker >/dev/null 2>&1 || {
     echo "[dev-stack] docker ausente — sem Auth o /login não autentica." >&2
     exit 0
   }
+}
+
+valor_env_local() {
+  local chave="$1"
+  if [ -n "${!chave:-}" ]; then
+    printf '%s' "${!chave}"
+    return
+  fi
+  [ -f .env.local ] || return 0
+  python3 - "$chave" <<'PY'
+import pathlib, sys
+k = sys.argv[1]
+p = pathlib.Path(".env.local")
+if not p.exists():
+    raise SystemExit(0)
+for line in p.read_text().splitlines():
+    if line.startswith(k + "="):
+        print(line.split("=", 1)[1], end="")
+        break
+PY
+}
+
+upsert_env_local() {
+  local chave="$1" valor="$2"
+  python3 - "$chave" "$valor" <<'PY'
+from pathlib import Path
+import sys
+k, v = sys.argv[1], sys.argv[2]
+p = Path(".env.local")
+lines = p.read_text().splitlines() if p.exists() else []
+out, seen = [], False
+for line in lines:
+    if line.startswith(k + "="):
+        out.append(f"{k}={v}")
+        seen = True
+    else:
+        out.append(line)
+if not seen:
+    out.append(f"{k}={v}")
+p.write_text("\n".join(out) + "\n")
+PY
+}
+
+aplica_secrets_do_cursor() {
+  [[ -f .env.local ]] || bash scripts/cloud-agent-setup.sh
+  if command -v pnpm >/dev/null 2>&1; then
+    pnpm exec tsx scripts/aplica-secrets-cursor.ts
+  fi
+}
+
+waha_eh_local() {
+  local url
+  url="$(valor_env_local WAHA_API_BASE_URL)"
+  case "$url" in
+    ""|http://127.0.0.1:*|http://localhost:*|https://127.0.0.1:*|https://localhost:*) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 espera_tcp() {
@@ -44,33 +116,102 @@ espera_tcp() {
   return 1
 }
 
+garante_dirs_persist() {
+  mkdir -p "$PERSIST_PG" "$PERSIST_WAHA_SESS" "$PERSIST_WAHA_MEDIA"
+  chmod 700 "$PERSIST_ROOT" 2>/dev/null || true
+}
+
+mesmo_dir() {
+  local a b
+  a="$(realpath -m "$1" 2>/dev/null || printf '%s' "$1")"
+  b="$(realpath -m "$2" 2>/dev/null || printf '%s' "$2")"
+  [[ -n "$a" && "$a" == "$b" ]]
+}
+
+fonte_mount() {
+  local nome="$1" destino="$2"
+  docker inspect -f '{{json .Mounts}}' "$nome" 2>/dev/null | python3 -c '
+import json, sys
+dest = sys.argv[1]
+try:
+    mounts = json.load(sys.stdin)
+except Exception:
+    raise SystemExit(0)
+for m in mounts or []:
+    if m.get("Destination") == dest:
+        print(m.get("Source") or "")
+        break
+' "$destino"
+}
+
+container_no_persist() {
+  local nome="$1" destino="$2" esperado="$3"
+  docker inspect "$nome" >/dev/null 2>&1 || return 1
+  mesmo_dir "$(fonte_mount "$nome" "$destino")" "$esperado"
+}
+
+copia_volume_para_dir() {
+  local volume="$1" dest="$2"
+  docker volume inspect "$volume" >/dev/null 2>&1 || return 0
+  echo "[dev-stack] copiando $volume → $dest"
+  docker run --rm \
+    -v "$volume":/from:ro \
+    -v "$dest":/to \
+    alpine:3.20 \
+    sh -c 'cp -a /from/. /to/'
+}
+
 sobe_postgres() {
-  if docker ps --format '{{.Names}}' | grep -qx supabase_db_deskcomm-crm; then
-    echo "[dev-stack] postgres já no ar."
+  garante_dirs_persist
+  if container_no_persist supabase_db_deskcomm-crm /var/lib/postgresql/data "$PERSIST_PG"; then
+    if docker ps --format '{{.Names}}' | grep -qx supabase_db_deskcomm-crm; then
+      echo "[dev-stack] postgres já no ar (persistência no workspace)."
+    else
+      docker start supabase_db_deskcomm-crm >/dev/null
+      echo "[dev-stack] postgres retomado do disco do workspace."
+    fi
+    espera_tcp 127.0.0.1 54322 || {
+      echo "[dev-stack] postgres não abriu 54322" >&2
+      return 1
+    }
     return 0
   fi
-  if docker ps -a --format '{{.Names}}' | grep -qx supabase_db_deskcomm-crm; then
-    docker start supabase_db_deskcomm-crm >/dev/null
-  else
-    docker run -d --name supabase_db_deskcomm-crm \
-      -p 54322:5432 \
-      -e POSTGRES_HOST_AUTH_METHOD=trust \
-      -e POSTGRES_PASSWORD=postgres \
-      -v supabase_db_deskcomm-crm:/var/lib/postgresql/data \
-      "$PG_IMAGE" >/dev/null
+
+  if docker inspect supabase_db_deskcomm-crm >/dev/null 2>&1; then
+    echo "[dev-stack] postgres ainda no volume Docker — migrando para o workspace (sem apagar dados)."
+    docker stop supabase_db_deskcomm-crm >/dev/null
   fi
+  if [[ ! -f "$PERSIST_PG/PG_VERSION" ]]; then
+    copia_volume_para_dir supabase_db_deskcomm-crm "$PERSIST_PG"
+  fi
+  docker rm supabase_db_deskcomm-crm >/dev/null 2>&1 || true
+
+  docker run -d --name supabase_db_deskcomm-crm \
+    -p 54322:5432 \
+    -e POSTGRES_HOST_AUTH_METHOD=trust \
+    -e POSTGRES_PASSWORD=postgres \
+    -v "$PERSIST_PG:/var/lib/postgresql/data" \
+    "$PG_IMAGE" >/dev/null
   espera_tcp 127.0.0.1 54322 || {
     echo "[dev-stack] postgres não abriu 54322" >&2
     return 1
   }
-  echo "[dev-stack] postgres em :54322"
+  echo "[dev-stack] postgres em :54322 (dados em .cursor/dev-persist/postgres)."
 }
 
 ajusta_senhas() {
-  docker exec supabase_db_deskcomm-crm \
-    psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 \
-    -c "alter user supabase_auth_admin with password 'postgres'; alter user authenticator with password 'postgres';" \
-    >/dev/null
+  local i
+  for i in $(seq 1 30); do
+    if docker exec supabase_db_deskcomm-crm \
+      psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 \
+      -c "alter user supabase_auth_admin with password 'postgres'; alter user authenticator with password 'postgres';" \
+      >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "[dev-stack] não consegui ajustar senhas do Auth no Postgres." >&2
+  return 1
 }
 
 aplica_baseline_se_faltar() {
@@ -99,11 +240,19 @@ aplica_baseline_se_faltar() {
     echo "[dev-stack] schema do produto presente (organizations + quadro do onboarding)."
     return 0
   fi
-  if [[ -f supabase/baseline.sql ]] && command -v psql >/dev/null 2>&1; then
+  docker exec supabase_db_deskcomm-crm psql -U supabase_admin -d postgres -v ON_ERROR_STOP=0 -c \
+    "create extension if not exists vector with schema public; create extension if not exists citext with schema public; create extension if not exists pg_trgm with schema public;" \
+    >/dev/null || true
+  if [[ -f supabase/baseline.sql ]]; then
     echo "[dev-stack] aplicando baseline.sql…"
-    PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=0 -q -f supabase/baseline.sql \
+    docker cp supabase/baseline.sql supabase_db_deskcomm-crm:/tmp/baseline.sql
+    docker exec supabase_db_deskcomm-crm psql -U supabase_admin -d postgres -v ON_ERROR_STOP=0 -q -f /tmp/baseline.sql \
+      >/dev/null \
       || echo "[dev-stack] aviso: baseline teve erros (comum em reaplicação)."
   fi
+  docker exec supabase_db_deskcomm-crm psql -U supabase_admin -d postgres -v ON_ERROR_STOP=0 -c \
+    "create schema if not exists storage; create table if not exists storage.buckets (id text primary key, name text not null, public boolean not null default false, file_size_limit bigint, allowed_mime_types text[], created_at timestamptz not null default now()); create table if not exists storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets(id), name text, owner uuid, metadata jsonb, created_at timestamptz not null default now());" \
+    >/dev/null || true
   if [[ -f supabase/migrations/20260813120000_0156_quadro_do_onboarding.sql ]]; then
     docker exec -i supabase_db_deskcomm-crm psql -U supabase_admin -d postgres -v ON_ERROR_STOP=0 \
       < supabase/migrations/20260813120000_0156_quadro_do_onboarding.sql >/dev/null \
@@ -202,43 +351,111 @@ print("[dev-stack] .env.local chaves locais" + (" atualizadas." if changed else 
 PY
 }
 
-# O compose local publica o WAHA em :3030. Sem URL+chave o onboarding trata
-# o WhatsApp como "ainda não subiu" e nunca mostra o QR.
+chave_waha_persistida() {
+  garante_dirs_persist
+  local key=""
+  if [[ -s "$PERSIST_WAHA_KEY" ]]; then
+    key="$(tr -d '\n' < "$PERSIST_WAHA_KEY")"
+  fi
+  if [[ -z "$key" ]]; then
+    key="$(valor_env_local WAHA_API_KEY)"
+  fi
+  if [[ -z "$key" ]] && docker inspect deskcomm-waha >/dev/null 2>&1; then
+    key="$(docker inspect deskcomm-waha --format '{{range .Config.Env}}{{println .}}{{end}}' | awk -F= '/^WAHA_API_KEY=/{print substr($0,14); exit}')"
+  fi
+  if [[ -z "$key" ]]; then
+    key="$(openssl rand -hex 32)"
+  fi
+  printf '%s' "$key" > "$PERSIST_WAHA_KEY"
+  chmod 600 "$PERSIST_WAHA_KEY" 2>/dev/null || true
+  printf '%s' "$key"
+}
+
+# Sessão do celular no disco do workspace. Pod Cloud Agent NOVO = pasta vazia —
+# aí o painel precisa de WAHA_API_BASE_URL apontando para um WAHA que não morre
+# com o agente (VPS). OpenRouter não entra aqui: só Secrets do painel.
+sobe_waha_local() {
+  if ! waha_eh_local; then
+    echo "[dev-stack] WAHA remoto no painel — não subo container local."
+    return 0
+  fi
+  garante_dirs_persist
+  local key
+  key="$(chave_waha_persistida)"
+  upsert_env_local WAHA_API_KEY "$key"
+  upsert_env_local WAHA_API_BASE_URL "http://127.0.0.1:3030"
+  upsert_env_local WAHA_WEBHOOK_BASE_URL "http://127.0.0.1:3000"
+
+  if container_no_persist deskcomm-waha /app/.sessions "$PERSIST_WAHA_SESS"; then
+    if docker ps --format '{{.Names}}' | grep -qx deskcomm-waha; then
+      echo "[dev-stack] WAHA já no ar (sessões no workspace)."
+    else
+      docker start deskcomm-waha >/dev/null
+      echo "[dev-stack] WAHA retomado do disco do workspace."
+    fi
+    espera_tcp 127.0.0.1 3030 60 || {
+      echo "[dev-stack] WAHA não abriu :3030 após start." >&2
+      return 0
+    }
+    return 0
+  fi
+
+  if docker inspect deskcomm-waha >/dev/null 2>&1; then
+    echo "[dev-stack] WAHA ainda no volume Docker — migrando sessões para o workspace."
+    docker stop deskcomm-waha >/dev/null
+  fi
+  if [[ -z "$(ls -A "$PERSIST_WAHA_SESS" 2>/dev/null || true)" ]]; then
+    copia_volume_para_dir deskcomm-waha-sessions "$PERSIST_WAHA_SESS"
+  fi
+  if [[ -z "$(ls -A "$PERSIST_WAHA_MEDIA" 2>/dev/null || true)" ]]; then
+    copia_volume_para_dir deskcomm-waha-media "$PERSIST_WAHA_MEDIA"
+  fi
+  docker rm deskcomm-waha >/dev/null 2>&1 || true
+
+  if ! docker run -d --name deskcomm-waha --restart unless-stopped \
+    -p 3030:3000 \
+    -e "WAHA_API_KEY=${key}" \
+    -e "WHATSAPP_HOOK_URL=http://host.docker.internal:3000/api/v1/webhooks/waha" \
+    -e "WHATSAPP_HOOK_EVENTS=message.any,message.ack,message.edited,message.revoked,session.status,state.change" \
+    -e WHATSAPP_DEFAULT_ENGINE=NOWEB \
+    -e WHATSAPP_RESTART_ALL_SESSIONS=True \
+    -e WAHA_DASHBOARD_ENABLED=true \
+    --add-host=host.docker.internal:host-gateway \
+    -v "$PERSIST_WAHA_SESS:/app/.sessions" \
+    -v "$PERSIST_WAHA_MEDIA:/app/.media" \
+    "$WAHA_IMAGE" >/dev/null; then
+    echo "[dev-stack] não subi o WAHA (imagem indisponível?). QR local não vai aparecer." >&2
+    return 0
+  fi
+  espera_tcp 127.0.0.1 3030 80 || {
+    echo "[dev-stack] WAHA não abriu :3030." >&2
+    docker logs deskcomm-waha 2>&1 | tail -15 >&2 || true
+    return 0
+  }
+  echo "[dev-stack] WAHA em :3030 (sessões em .cursor/dev-persist/waha-sessions)."
+}
+
 aponta_waha_local() {
+  if ! waha_eh_local; then
+    return 0
+  fi
   if ! docker inspect deskcomm-waha >/dev/null 2>&1; then
-    echo "[dev-stack] WAHA container ausente — pulando."
+    echo "[dev-stack] WAHA container ausente — pulando apontar URL."
     return 0
   fi
   [[ -f .env.local ]] || return 0
   local waha_key
-  waha_key="$(docker inspect deskcomm-waha --format '{{range .Config.Env}}{{println .}}{{end}}' | awk -F= '/^WAHA_API_KEY=/{print substr($0,14); exit}')"
+  waha_key="$(valor_env_local WAHA_API_KEY)"
   if [ -z "$waha_key" ]; then
-    echo "[dev-stack] WAHA_API_KEY vazia no container — pulando."
+    waha_key="$(docker inspect deskcomm-waha --format '{{range .Config.Env}}{{println .}}{{end}}' | awk -F= '/^WAHA_API_KEY=/{print substr($0,14); exit}')"
+  fi
+  if [ -z "$waha_key" ]; then
+    echo "[dev-stack] WAHA_API_KEY vazia — pulando."
     return 0
   fi
-  python3 - "$waha_key" <<'PY'
-from pathlib import Path
-import sys
-key = sys.argv[1]
-p = Path(".env.local")
-lines = p.read_text().splitlines()
-out, seen_url, seen_key = [], False, False
-for line in lines:
-    if line.startswith("WAHA_API_BASE_URL="):
-        out.append("WAHA_API_BASE_URL=http://127.0.0.1:3030")
-        seen_url = True
-    elif line.startswith("WAHA_API_KEY="):
-        out.append(f"WAHA_API_KEY={key}")
-        seen_key = True
-    else:
-        out.append(line)
-if not seen_url:
-    out.append("WAHA_API_BASE_URL=http://127.0.0.1:3030")
-if not seen_key:
-    out.append(f"WAHA_API_KEY={key}")
-p.write_text("\n".join(out) + "\n")
-print("[dev-stack] WAHA apontado para deskcomm-waha:3030")
-PY
+  upsert_env_local WAHA_API_BASE_URL "http://127.0.0.1:3030"
+  upsert_env_local WAHA_API_KEY "$waha_key"
+  echo "[dev-stack] app apontado para WAHA local :3030"
 }
 
 semeia_dono() {
@@ -250,7 +467,29 @@ semeia_dono() {
     pnpm exec tsx scripts/bootstrap-owner.ts
 }
 
+# Segundo admin na mesma org. Reusa o bootstrap: org já existe (slug de
+# OWNER_ORG_NAME), então só cria o usuário, associa como admin e promove.
+semeia_usuario_de_teste() {
+  if ! command -v pnpm >/dev/null 2>&1; then
+    return 0
+  fi
+  if [[ -z "${DEV_TEST_EMAIL:-}" || -z "${DEV_TEST_PASSWORD:-}" ]]; then
+    return 0
+  fi
+  OWNER_EMAIL="$DEV_TEST_EMAIL" OWNER_PASSWORD="$DEV_TEST_PASSWORD" OWNER_ORG_NAME="$OWNER_ORG_NAME" \
+    pnpm exec tsx scripts/bootstrap-owner.ts
+}
+
+semeia_ia_e_canal() {
+  if ! command -v pnpm >/dev/null 2>&1; then
+    return 0
+  fi
+  pnpm exec tsx scripts/semeia-dev-ia-e-canal.ts || \
+    echo "[dev-stack] seed de IA/canal avisou — siga mesmo assim."
+}
+
 precisa_docker
+aplica_secrets_do_cursor
 sobe_postgres
 ajusta_senhas
 aplica_baseline_se_faltar
@@ -258,6 +497,10 @@ sobe_gotrue
 sobe_postgrest
 sobe_gateway
 grava_chaves_no_env_local
+sobe_waha_local
 aponta_waha_local
 semeia_dono
+semeia_usuario_de_teste
+semeia_ia_e_canal
 echo "[dev-stack] login local: ${OWNER_EMAIL} / (OWNER_PASSWORD no ambiente; padrão DevLogin!1234)"
+echo "[dev-stack] login de teste: ${DEV_TEST_EMAIL}"
