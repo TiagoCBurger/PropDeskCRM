@@ -72,6 +72,10 @@ supabase/.branches/
 
 # Local docker volumes (WAHA)
 .waha-data/
+
+# Disco do Cloud Agent (Postgres + sessão WhatsApp). Só o README viaja.
+.cursor/dev-persist/**
+!.cursor/dev-persist/README.md
 .epic-executor/
 .playwright-mcp/
 

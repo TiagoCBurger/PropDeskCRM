@@ -17,6 +17,7 @@ describe("usuário de teste do seed local", () => {
     expect(fonte).toMatch(/aplica_secrets_do_cursor/);
     expect(fonte).toMatch(/sobe_waha_local/);
     expect(fonte).toMatch(/semeia_ia_e_canal/);
+    expect(fonte).toContain(".cursor/dev-persist");
   });
 
   it("o instalador da VPS não leva esse e-mail", () => {

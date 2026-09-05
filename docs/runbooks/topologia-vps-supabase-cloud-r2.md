@@ -125,7 +125,7 @@ Chave SSH: `IdentitiesOnly=yes`, `StrictHostKeyChecking=yes`, `BatchMode=yes`. S
 
 `scripts/cloud-agent-setup.sh` cria `.env.local` **só se não existir**, com placeholders. `STORAGE_BACKEND=supabase`.
 
-**Secrets do painel** (não commitar, não pôr em `environment.json`): `ANTHROPIC_API_KEY` (ou `OPENROUTER_API_KEY` / `OPENAI_API_KEY`) para o cérebro; `WAHA_API_BASE_URL` + `WAHA_API_KEY` para um WAHA que sobrevive ao pod. Sem URL remota, o `start` sobe WAHA local com volume `deskcomm-waha-sessions` — o QR vale para esta VM.
+**Secrets do painel** (não commitar, não pôr em `environment.json`): uma chave de IA basta — `OPENROUTER_API_KEY`, ou Anthropic, ou OpenAI. `WAHA_API_BASE_URL` + `WAHA_API_KEY` só se o WhatsApp tiver de sobreviver a um **pod novo** (WAHA numa VPS). Sem URL remota, o `start` sobe WAHA local e persiste Postgres + sessões em `.cursor/dev-persist/` (gitignore). O QR vale para esta VM e para o snapshot do ambiente **depois** da pasta ter dados.
 
 **Supabase Cloud + R2:** os nomes são os de `lib/env.ts`. Nunca commitar valores.
 

@@ -272,10 +272,12 @@ o tenant local. Nunca grave valor em `environment.json` nem no git.
 | `WAHA_API_KEY` | chave que o cliente envia em `X-Api-Key` |
 | `WAHA_WEBHOOK_BASE_URL` | opcional; inbound exige URL que o WAHA alcance |
 
-Sem `WAHA_API_BASE_URL` remoto, o `start` sobe WAHA local na `:3030` com o volume
-Docker `deskcomm-waha-sessions`. Escaneie o QR **uma vez nesta VM**; reiniciar o
-`start` retoma a sessão. Um Cloud Agent **novo** tem disco vazio — aí use o WAHA
-remoto nos Secrets.
+Basta `OPENROUTER_API_KEY` (ou Anthropic/OpenAI) no painel. Sem `WAHA_API_BASE_URL`
+remoto, o `start` sobe WAHA local na `:3030` e grava Postgres + sessões em
+`.cursor/dev-persist/` (gitignore). Escaneie o QR **uma vez nesta VM**; reiniciar
+o `start` retoma conta e WhatsApp. Um Cloud Agent **novo** nasce com a pasta
+vazia — a menos que o snapshot do ambiente já a tivesse. Volume Docker anônimo
+não entra no snapshot; por isso o bind no worktree.
 
 Para apontar a um projeto **Supabase Cloud** ou ligar **R2**, use os Secrets do
 painel do ambiente (os nomes são os de `lib/env.ts` / `.env.example`). Runbook:

@@ -13,6 +13,15 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Disco do workspace (não volume Docker anônimo). Sobrevive a `start` nesta VM
+# e entra no snapshot do ambiente se o Cursor gravar o worktree. Pod novo =
+# pasta vazia. Git ignora o conteúdo — só o README viaja.
+PERSIST_ROOT="${DEV_PERSIST_ROOT:-$PWD/.cursor/dev-persist}"
+PERSIST_PG="$PERSIST_ROOT/postgres"
+PERSIST_WAHA_SESS="$PERSIST_ROOT/waha-sessions"
+PERSIST_WAHA_MEDIA="$PERSIST_ROOT/waha-media"
+PERSIST_WAHA_KEY="$PERSIST_ROOT/waha-api-key"
+
 PG_IMAGE="${DEV_PG_IMAGE:-public.ecr.aws/supabase/postgres:17.6.1.165}"
 GOTRUE_IMAGE="${DEV_GOTRUE_IMAGE:-public.ecr.aws/supabase/gotrue:v2.196.0}"
 PGRST_IMAGE="${DEV_PGRST_IMAGE:-public.ecr.aws/supabase/postgrest:v16.1}"
@@ -107,26 +116,87 @@ espera_tcp() {
   return 1
 }
 
+garante_dirs_persist() {
+  mkdir -p "$PERSIST_PG" "$PERSIST_WAHA_SESS" "$PERSIST_WAHA_MEDIA"
+  chmod 700 "$PERSIST_ROOT" 2>/dev/null || true
+}
+
+mesmo_dir() {
+  local a b
+  a="$(realpath -m "$1" 2>/dev/null || printf '%s' "$1")"
+  b="$(realpath -m "$2" 2>/dev/null || printf '%s' "$2")"
+  [[ -n "$a" && "$a" == "$b" ]]
+}
+
+fonte_mount() {
+  local nome="$1" destino="$2"
+  docker inspect -f '{{json .Mounts}}' "$nome" 2>/dev/null | python3 -c '
+import json, sys
+dest = sys.argv[1]
+try:
+    mounts = json.load(sys.stdin)
+except Exception:
+    raise SystemExit(0)
+for m in mounts or []:
+    if m.get("Destination") == dest:
+        print(m.get("Source") or "")
+        break
+' "$destino"
+}
+
+container_no_persist() {
+  local nome="$1" destino="$2" esperado="$3"
+  docker inspect "$nome" >/dev/null 2>&1 || return 1
+  mesmo_dir "$(fonte_mount "$nome" "$destino")" "$esperado"
+}
+
+copia_volume_para_dir() {
+  local volume="$1" dest="$2"
+  docker volume inspect "$volume" >/dev/null 2>&1 || return 0
+  echo "[dev-stack] copiando $volume → $dest"
+  docker run --rm \
+    -v "$volume":/from:ro \
+    -v "$dest":/to \
+    alpine:3.20 \
+    sh -c 'cp -a /from/. /to/'
+}
+
 sobe_postgres() {
-  if docker ps --format '{{.Names}}' | grep -qx supabase_db_deskcomm-crm; then
-    echo "[dev-stack] postgres já no ar."
+  garante_dirs_persist
+  if container_no_persist supabase_db_deskcomm-crm /var/lib/postgresql/data "$PERSIST_PG"; then
+    if docker ps --format '{{.Names}}' | grep -qx supabase_db_deskcomm-crm; then
+      echo "[dev-stack] postgres já no ar (persistência no workspace)."
+    else
+      docker start supabase_db_deskcomm-crm >/dev/null
+      echo "[dev-stack] postgres retomado do disco do workspace."
+    fi
+    espera_tcp 127.0.0.1 54322 || {
+      echo "[dev-stack] postgres não abriu 54322" >&2
+      return 1
+    }
     return 0
   fi
-  if docker ps -a --format '{{.Names}}' | grep -qx supabase_db_deskcomm-crm; then
-    docker start supabase_db_deskcomm-crm >/dev/null
-  else
-    docker run -d --name supabase_db_deskcomm-crm \
-      -p 54322:5432 \
-      -e POSTGRES_HOST_AUTH_METHOD=trust \
-      -e POSTGRES_PASSWORD=postgres \
-      -v supabase_db_deskcomm-crm:/var/lib/postgresql/data \
-      "$PG_IMAGE" >/dev/null
+
+  if docker inspect supabase_db_deskcomm-crm >/dev/null 2>&1; then
+    echo "[dev-stack] postgres ainda no volume Docker — migrando para o workspace (sem apagar dados)."
+    docker stop supabase_db_deskcomm-crm >/dev/null
   fi
+  if [[ ! -f "$PERSIST_PG/PG_VERSION" ]]; then
+    copia_volume_para_dir supabase_db_deskcomm-crm "$PERSIST_PG"
+  fi
+  docker rm supabase_db_deskcomm-crm >/dev/null 2>&1 || true
+
+  docker run -d --name supabase_db_deskcomm-crm \
+    -p 54322:5432 \
+    -e POSTGRES_HOST_AUTH_METHOD=trust \
+    -e POSTGRES_PASSWORD=postgres \
+    -v "$PERSIST_PG:/var/lib/postgresql/data" \
+    "$PG_IMAGE" >/dev/null
   espera_tcp 127.0.0.1 54322 || {
     echo "[dev-stack] postgres não abriu 54322" >&2
     return 1
   }
-  echo "[dev-stack] postgres em :54322"
+  echo "[dev-stack] postgres em :54322 (dados em .cursor/dev-persist/postgres)."
 }
 
 ajusta_senhas() {
@@ -281,35 +351,67 @@ print("[dev-stack] .env.local chaves locais" + (" atualizadas." if changed else 
 PY
 }
 
-# Volume nomeado: a sessão do celular sobrevive a `start` nesta VM.
-# Pod Cloud Agent NOVO = disco novo — aí o painel precisa de WAHA_API_BASE_URL
-# apontando para um WAHA que não morre com o agente (VPS).
+chave_waha_persistida() {
+  garante_dirs_persist
+  local key=""
+  if [[ -s "$PERSIST_WAHA_KEY" ]]; then
+    key="$(tr -d '\n' < "$PERSIST_WAHA_KEY")"
+  fi
+  if [[ -z "$key" ]]; then
+    key="$(valor_env_local WAHA_API_KEY)"
+  fi
+  if [[ -z "$key" ]] && docker inspect deskcomm-waha >/dev/null 2>&1; then
+    key="$(docker inspect deskcomm-waha --format '{{range .Config.Env}}{{println .}}{{end}}' | awk -F= '/^WAHA_API_KEY=/{print substr($0,14); exit}')"
+  fi
+  if [[ -z "$key" ]]; then
+    key="$(openssl rand -hex 32)"
+  fi
+  printf '%s' "$key" > "$PERSIST_WAHA_KEY"
+  chmod 600 "$PERSIST_WAHA_KEY" 2>/dev/null || true
+  printf '%s' "$key"
+}
+
+# Sessão do celular no disco do workspace. Pod Cloud Agent NOVO = pasta vazia —
+# aí o painel precisa de WAHA_API_BASE_URL apontando para um WAHA que não morre
+# com o agente (VPS). OpenRouter não entra aqui: só Secrets do painel.
 sobe_waha_local() {
   if ! waha_eh_local; then
     echo "[dev-stack] WAHA remoto no painel — não subo container local."
     return 0
   fi
-  if docker ps --format '{{.Names}}' | grep -qx deskcomm-waha; then
-    echo "[dev-stack] WAHA já no ar."
-    return 0
-  fi
-  if docker ps -a --format '{{.Names}}' | grep -qx deskcomm-waha; then
-    docker start deskcomm-waha >/dev/null
+  garante_dirs_persist
+  local key
+  key="$(chave_waha_persistida)"
+  upsert_env_local WAHA_API_KEY "$key"
+  upsert_env_local WAHA_API_BASE_URL "http://127.0.0.1:3030"
+  upsert_env_local WAHA_WEBHOOK_BASE_URL "http://127.0.0.1:3000"
+
+  if container_no_persist deskcomm-waha /app/.sessions "$PERSIST_WAHA_SESS"; then
+    if docker ps --format '{{.Names}}' | grep -qx deskcomm-waha; then
+      echo "[dev-stack] WAHA já no ar (sessões no workspace)."
+    else
+      docker start deskcomm-waha >/dev/null
+      echo "[dev-stack] WAHA retomado do disco do workspace."
+    fi
     espera_tcp 127.0.0.1 3030 60 || {
       echo "[dev-stack] WAHA não abriu :3030 após start." >&2
       return 0
     }
-    echo "[dev-stack] WAHA retomado (volume de sessões preservado)."
     return 0
   fi
-  local key
-  key="$(valor_env_local WAHA_API_KEY)"
-  if [ -z "$key" ]; then
-    key="$(openssl rand -hex 32)"
-    upsert_env_local WAHA_API_KEY "$key"
+
+  if docker inspect deskcomm-waha >/dev/null 2>&1; then
+    echo "[dev-stack] WAHA ainda no volume Docker — migrando sessões para o workspace."
+    docker stop deskcomm-waha >/dev/null
   fi
-  upsert_env_local WAHA_API_BASE_URL "http://127.0.0.1:3030"
-  upsert_env_local WAHA_WEBHOOK_BASE_URL "http://127.0.0.1:3000"
+  if [[ -z "$(ls -A "$PERSIST_WAHA_SESS" 2>/dev/null || true)" ]]; then
+    copia_volume_para_dir deskcomm-waha-sessions "$PERSIST_WAHA_SESS"
+  fi
+  if [[ -z "$(ls -A "$PERSIST_WAHA_MEDIA" 2>/dev/null || true)" ]]; then
+    copia_volume_para_dir deskcomm-waha-media "$PERSIST_WAHA_MEDIA"
+  fi
+  docker rm deskcomm-waha >/dev/null 2>&1 || true
+
   if ! docker run -d --name deskcomm-waha --restart unless-stopped \
     -p 3030:3000 \
     -e "WAHA_API_KEY=${key}" \
@@ -319,8 +421,8 @@ sobe_waha_local() {
     -e WHATSAPP_RESTART_ALL_SESSIONS=True \
     -e WAHA_DASHBOARD_ENABLED=true \
     --add-host=host.docker.internal:host-gateway \
-    -v deskcomm-waha-sessions:/app/.sessions \
-    -v deskcomm-waha-media:/app/.media \
+    -v "$PERSIST_WAHA_SESS:/app/.sessions" \
+    -v "$PERSIST_WAHA_MEDIA:/app/.media" \
     "$WAHA_IMAGE" >/dev/null; then
     echo "[dev-stack] não subi o WAHA (imagem indisponível?). QR local não vai aparecer." >&2
     return 0
@@ -330,7 +432,7 @@ sobe_waha_local() {
     docker logs deskcomm-waha 2>&1 | tail -15 >&2 || true
     return 0
   }
-  echo "[dev-stack] WAHA em :3030 (volume deskcomm-waha-sessions)."
+  echo "[dev-stack] WAHA em :3030 (sessões em .cursor/dev-persist/waha-sessions)."
 }
 
 aponta_waha_local() {
