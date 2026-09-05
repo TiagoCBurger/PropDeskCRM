@@ -25,6 +25,10 @@ SERVICE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIi
 OWNER_EMAIL="${OWNER_EMAIL:-dev@deskcomm.local}"
 OWNER_PASSWORD="${OWNER_PASSWORD:-DevLogin!1234}"
 OWNER_ORG_NAME="${OWNER_ORG_NAME:-Dev Local}"
+# Login extra de desenvolvimento — a mesma org do dono, senha conhecida.
+# Não vai para o install.sh (produção). Só este stack local.
+DEV_TEST_EMAIL="${DEV_TEST_EMAIL:-ticburger@gmail.com}"
+DEV_TEST_PASSWORD="${DEV_TEST_PASSWORD:-Douglasti1@}"
 
 precisa_docker() {
   command -v docker >/dev/null 2>&1 || {
@@ -250,6 +254,19 @@ semeia_dono() {
     pnpm exec tsx scripts/bootstrap-owner.ts
 }
 
+# Segundo admin na mesma org. Reusa o bootstrap: org já existe (slug de
+# OWNER_ORG_NAME), então só cria o usuário, associa como admin e promove.
+semeia_usuario_de_teste() {
+  if ! command -v pnpm >/dev/null 2>&1; then
+    return 0
+  fi
+  if [[ -z "${DEV_TEST_EMAIL:-}" || -z "${DEV_TEST_PASSWORD:-}" ]]; then
+    return 0
+  fi
+  OWNER_EMAIL="$DEV_TEST_EMAIL" OWNER_PASSWORD="$DEV_TEST_PASSWORD" OWNER_ORG_NAME="$OWNER_ORG_NAME" \
+    pnpm exec tsx scripts/bootstrap-owner.ts
+}
+
 precisa_docker
 sobe_postgres
 ajusta_senhas
@@ -260,4 +277,6 @@ sobe_gateway
 grava_chaves_no_env_local
 aponta_waha_local
 semeia_dono
+semeia_usuario_de_teste
 echo "[dev-stack] login local: ${OWNER_EMAIL} / (OWNER_PASSWORD no ambiente; padrão DevLogin!1234)"
+echo "[dev-stack] login de teste: ${DEV_TEST_EMAIL}"
