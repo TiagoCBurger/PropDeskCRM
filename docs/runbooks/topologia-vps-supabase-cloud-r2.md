@@ -121,11 +121,13 @@ Chave SSH: `IdentitiesOnly=yes`, `StrictHostKeyChecking=yes`, `BatchMode=yes`. S
 
 ## 5. Cursor Cloud (este agente) no dia a dia
 
-**CONFIRMADO.** `.cursor/environment.json` só declara `install` (`scripts/cloud-agent-setup.sh` + `pnpm install --frozen-lockfile`) e um terminal `pnpm dev`. **Não** há `start` que derrube o boot se o banco real não estiver no ar.
+**CONFIRMADO.** `.cursor/environment.json` declara `install` (`scripts/cloud-agent-setup.sh` + `pnpm install --frozen-lockfile`), `start` (`scripts/cloud-agent-dev-stack.sh` — Auth local + WAHA + seed) e um terminal `pnpm dev`.
 
-`scripts/cloud-agent-setup.sh` cria `.env.local` **só se não existir**, com placeholders. `STORAGE_BACKEND=supabase`. Sem secrets reais.
+`scripts/cloud-agent-setup.sh` cria `.env.local` **só se não existir**, com placeholders. `STORAGE_BACKEND=supabase`.
 
-**Como apontar para Supabase Cloud + R2 neste ambiente:** Secrets do painel do Cloud Agent / Environment (injetados como env vars no processo). Os **nomes** são os de `lib/env.ts`. Nunca commitar valores. Nunca colocar chave em `.cursor/environment.json`.
+**Secrets do painel** (não commitar, não pôr em `environment.json`): `ANTHROPIC_API_KEY` (ou `OPENROUTER_API_KEY` / `OPENAI_API_KEY`) para o cérebro; `WAHA_API_BASE_URL` + `WAHA_API_KEY` para um WAHA que sobrevive ao pod. Sem URL remota, o `start` sobe WAHA local com volume `deskcomm-waha-sessions` — o QR vale para esta VM.
+
+**Supabase Cloud + R2:** os nomes são os de `lib/env.ts`. Nunca commitar valores.
 
 Node 22 (`.nvmrc`) e pnpm via `packageManager` do `package.json`.
 

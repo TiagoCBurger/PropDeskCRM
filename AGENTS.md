@@ -259,9 +259,26 @@ gera `.env.local` com placeholders se o arquivo ainda não existir; **não** col
 secrets. `pnpm dev` vive em `terminals`, não em `start`: sem banco real um
 `start` que falha derruba o boot do agente.
 
+**Secrets do painel** (Environment → Secrets). O `start`
+(`scripts/cloud-agent-dev-stack.sh`) copia estes nomes para `.env.local` e semeia
+o tenant local. Nunca grave valor em `environment.json` nem no git.
+
+| Nome | Para quê |
+|---|---|
+| `ANTHROPIC_API_KEY` | cérebro do tenant (preferido) |
+| `OPENROUTER_API_KEY` | alternativa se Anthropic estiver vazio |
+| `OPENAI_API_KEY` | alternativa |
+| `WAHA_API_BASE_URL` | WAHA **remoto** (VPS) — a sessão do celular sobrevive a um agente novo |
+| `WAHA_API_KEY` | chave que o cliente envia em `X-Api-Key` |
+| `WAHA_WEBHOOK_BASE_URL` | opcional; inbound exige URL que o WAHA alcance |
+
+Sem `WAHA_API_BASE_URL` remoto, o `start` sobe WAHA local na `:3030` com o volume
+Docker `deskcomm-waha-sessions`. Escaneie o QR **uma vez nesta VM**; reiniciar o
+`start` retoma a sessão. Um Cloud Agent **novo** tem disco vazio — aí use o WAHA
+remoto nos Secrets.
+
 Para apontar a um projeto **Supabase Cloud** ou ligar **R2**, use os Secrets do
-painel do ambiente (os nomes são os de `lib/env.ts` / `.env.example`). Nunca
-grave chave em `environment.json`. Runbook:
+painel do ambiente (os nomes são os de `lib/env.ts` / `.env.example`). Runbook:
 [`docs/runbooks/topologia-vps-supabase-cloud-r2.md`](docs/runbooks/topologia-vps-supabase-cloud-r2.md).
 
 <!-- BEGIN:nextjs-agent-rules -->
